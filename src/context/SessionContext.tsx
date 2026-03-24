@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { Session, Player, TimeSlot, PlaySystem } from '../types'
+import { saveSession, loadSession } from '../utils/storage'
 
 const generateId = () => crypto.randomUUID()
 
@@ -33,7 +34,11 @@ interface SessionContextType {
 const SessionContext = createContext<SessionContextType | null>(null)
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session>(defaultSession)
+  const [session, setSession] = useState<Session>(() => loadSession() ?? defaultSession)
+
+  useEffect(() => {
+    saveSession(session)
+  }, [session])
 
   const setDate = useCallback((date: string) =>
     setSession(s => ({ ...s, date })), [])

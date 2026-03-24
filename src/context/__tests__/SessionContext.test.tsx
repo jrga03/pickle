@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { beforeEach } from 'vitest'
 import { SessionProvider, useSession } from '../SessionContext'
 
 function TestConsumer() {
@@ -16,6 +17,10 @@ function TestConsumer() {
 }
 
 describe('SessionContext', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it('starts with empty session', () => {
     render(
       <SessionProvider>
