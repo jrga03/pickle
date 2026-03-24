@@ -12,6 +12,7 @@ const defaultSession: Session = {
   players: [],
   rounds: [],
   playSystem: 'paddle-queue',
+  deferredPlayerIds: [],
 }
 
 interface SessionContextType {

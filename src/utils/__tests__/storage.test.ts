@@ -10,6 +10,7 @@ const mockSession: Session = {
   players: [],
   rounds: [],
   playSystem: 'paddle-queue',
+  deferredPlayerIds: [],
 }
 
 describe('storage', () => {
@@ -26,6 +27,32 @@ describe('storage', () => {
   it('returns null when no session saved', () => {
     const loaded = loadSession()
     expect(loaded).toBeNull()
+  })
+})
+
+describe('storage migration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('migrates deferred status to active and initializes deferredPlayerIds', () => {
+    const oldSession = {
+      date: '2026-03-24',
+      venue: 'Court A',
+      defaultRate: 500,
+      timeSlots: [],
+      players: [
+        { id: '1', name: 'Jason', arrivalTime: '14:00', departureTime: '18:00', status: 'deferred' },
+        { id: '2', name: 'Lel', arrivalTime: '14:00', departureTime: '18:00', status: 'active' },
+      ],
+      rounds: [],
+      playSystem: 'paddle-queue',
+    }
+    localStorage.setItem('pickleball-session', JSON.stringify(oldSession))
+    const loaded = loadSession()
+    expect(loaded!.players[0].status).toBe('active')
+    expect(loaded!.players[1].status).toBe('active')
+    expect(loaded!.deferredPlayerIds).toEqual([])
   })
 })
 

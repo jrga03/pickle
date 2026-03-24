@@ -24,6 +24,15 @@ export function loadSession(): Session | null {
       }
       return p
     })
+    // Migrate deferred status to active
+    session.players = session.players.map(p => ({
+      ...p,
+      status: p.status === 'deferred' ? 'active' : p.status,
+    }))
+    // Initialize deferredPlayerIds if missing
+    if (!session.deferredPlayerIds) {
+      session.deferredPlayerIds = []
+    }
     return session
   } catch {
     return null

@@ -1,4 +1,4 @@
-export type PlayerStatus = 'active' | 'deferred' | 'left'
+export type PlayerStatus = 'active' | 'left'
 
 export type PlaySystem = 'paddle-queue' | 'challenge-court' | 'round-robin'
 
@@ -38,6 +38,7 @@ export interface Session {
   players: Player[]
   rounds: Round[]
   playSystem: PlaySystem
+  deferredPlayerIds: string[]
 }
 
 export interface SavedVenue {
