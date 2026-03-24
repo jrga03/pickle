@@ -28,6 +28,7 @@ interface SessionContextType {
   removePlayer: (id: string) => void
   updatePlayerStatus: (id: string, status: Player['status']) => void
   updatePlayerSchedule: (id: string, arrivalTime: string, departureTime: string) => void
+  setDeferredPlayerIds: (ids: string[]) => void
   setRounds: (rounds: Session['rounds']) => void
   resetSession: () => void
 }
@@ -101,6 +102,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       players: s.players.map(p => p.id === id ? { ...p, arrivalTime, departureTime } : p),
     })), [])
 
+  const setDeferredPlayerIds = useCallback((deferredPlayerIds: string[]) =>
+    setSession(s => ({ ...s, deferredPlayerIds })), [])
+
   const setRounds = useCallback((rounds: Session['rounds']) =>
     setSession(s => ({ ...s, rounds })), [])
 
@@ -112,7 +116,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       session, setDate, setVenue, setDefaultRate, setPlaySystem,
       addTimeSlot, removeTimeSlot, updateTimeSlot,
       addPlayer, removePlayer, updatePlayerStatus, updatePlayerSchedule,
-      setRounds, resetSession,
+      setDeferredPlayerIds, setRounds, resetSession,
     }}>
       {children}
     </SessionContext.Provider>
