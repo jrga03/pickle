@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { useSession } from '../context/SessionContext'
+import { Autocomplete } from './Autocomplete'
+import { loadVenues, saveVenues } from '../utils/storage'
+import type { SavedVenue } from '../types'
 
 const hours = Array.from({ length: 18 }, (_, i) => {
   const h = i + 6 // 6 AM to 11 PM
@@ -24,6 +27,43 @@ export function SetupTab() {
     removeTimeSlot,
     updateTimeSlot,
   } = useSession()
+
+  const [savedVenues, setSavedVenues] = useState<SavedVenue[]>(() => loadVenues())
+
+  const handleSelectVenue = (item: { id: string; label: string }) => {
+    const venue = savedVenues.find(v => v.id === item.id)
+    if (venue) {
+      setVenue(venue.name)
+      setDefaultRate(venue.defaultRate)
+    }
+  }
+
+  const handleDeleteVenue = (id: string) => {
+    const updated = savedVenues.filter(v => v.id !== id)
+    setSavedVenues(updated)
+    saveVenues(updated)
+  }
+
+  const handleSaveVenue = () => {
+    if (!session.venue.trim()) return
+    const existing = savedVenues.find(
+      v => v.name.toLowerCase() === session.venue.toLowerCase()
+    )
+    let updated: SavedVenue[]
+    if (existing) {
+      updated = savedVenues.map(v =>
+        v.id === existing.id ? { ...v, defaultRate: session.defaultRate } : v
+      )
+    } else {
+      updated = [...savedVenues, {
+        id: crypto.randomUUID(),
+        name: session.venue,
+        defaultRate: session.defaultRate,
+      }]
+    }
+    setSavedVenues(updated)
+    saveVenues(updated)
+  }
 
   const [newSlot, setNewSlot] = useState({
     startTime: '',
@@ -58,16 +98,27 @@ export function SetupTab() {
           />
         </label>
 
-        <label className="block">
+        <div className="block">
           <span className="text-sm font-medium text-gray-700">Venue (optional)</span>
-          <input
-            type="text"
-            value={session.venue}
-            onChange={e => setVenue(e.target.value)}
-            placeholder="e.g. BGC Courts"
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base"
-          />
-        </label>
+          <div className="mt-1 flex gap-2">
+            <Autocomplete
+              suggestions={savedVenues.map(v => ({ id: v.id, label: v.name }))}
+              onSelect={handleSelectVenue}
+              onSubmit={val => setVenue(val)}
+              onDelete={handleDeleteVenue}
+              placeholder="e.g. BGC Courts"
+              value={session.venue}
+              onChange={setVenue}
+            />
+            <button
+              onClick={handleSaveVenue}
+              disabled={!session.venue.trim()}
+              className="rounded-lg border border-green-600 text-green-600 px-3 py-2.5 text-sm font-medium disabled:opacity-50 min-h-[44px]"
+            >
+              Save
+            </button>
+          </div>
+        </div>
 
         <label className="block">
           <span className="text-sm font-medium text-gray-700">Court Rate</span>
