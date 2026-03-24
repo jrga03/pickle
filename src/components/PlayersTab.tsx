@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useSession } from '../context/SessionContext'
 import { formatHour } from './SetupTab'
 import { parseHour } from '../utils/expenses'
-import type { PlayerStatus } from '../types'
+import { Autocomplete } from './Autocomplete'
+import { loadPlayers, savePlayers } from '../utils/storage'
+import type { PlayerStatus, SavedPlayer } from '../types'
 
 const statusColors: Record<PlayerStatus, string> = {
   active: 'bg-green-100 text-green-800',
@@ -29,17 +31,34 @@ export function PlayersTab() {
     updatePlayerSchedule,
   } = useSession()
 
-  const [name, setName] = useState('')
+  const [savedPlayers, setSavedPlayers] = useState<SavedPlayer[]>(() => loadPlayers())
+  const [playerInput, setPlayerInput] = useState('')
 
-  const handleAdd = () => {
-    const trimmed = name.trim()
-    if (!trimmed) return
-    addPlayer(trimmed)
-    setName('')
+  const availableSuggestions = savedPlayers
+    .filter(sp => !session.players.some(
+      p => p.name.toLowerCase() === sp.name.toLowerCase()
+    ))
+    .map(sp => ({ id: sp.id, label: sp.name }))
+
+  const handleSelectPlayer = (item: { id: string; label: string }) => {
+    addPlayer(item.label)
+    setPlayerInput('')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleAdd()
+  const handleSubmitPlayer = (value: string) => {
+    addPlayer(value)
+    if (!savedPlayers.some(sp => sp.name.toLowerCase() === value.toLowerCase())) {
+      const updated = [...savedPlayers, { id: crypto.randomUUID(), name: value }]
+      setSavedPlayers(updated)
+      savePlayers(updated)
+    }
+    setPlayerInput('')
+  }
+
+  const handleDeleteSavedPlayer = (id: string) => {
+    const updated = savedPlayers.filter(sp => sp.id !== id)
+    setSavedPlayers(updated)
+    savePlayers(updated)
   }
 
   const slots = session.timeSlots
@@ -78,17 +97,20 @@ export function PlayersTab() {
       )}
 
       <div className="flex gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={handleKeyDown}
+        <Autocomplete
+          suggestions={availableSuggestions}
+          onSelect={handleSelectPlayer}
+          onSubmit={handleSubmitPlayer}
+          onDelete={handleDeleteSavedPlayer}
           placeholder="Player name"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-base"
+          value={playerInput}
+          onChange={setPlayerInput}
         />
         <button
-          onClick={handleAdd}
-          disabled={!name.trim()}
+          onClick={() => {
+            if (playerInput.trim()) handleSubmitPlayer(playerInput.trim())
+          }}
+          disabled={!playerInput.trim()}
           className="rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-medium disabled:opacity-50 min-h-[44px]"
         >
           Add
