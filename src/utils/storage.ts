@@ -10,7 +10,19 @@ export function loadSession(): Session | null {
   const data = localStorage.getItem(STORAGE_KEY)
   if (!data) return null
   try {
-    return JSON.parse(data) as Session
+    const session = JSON.parse(data) as Session
+    // Migrate players from old arrivalSlotId to arrivalTime/departureTime
+    session.players = session.players.map(p => {
+      if (!p.arrivalTime || !p.departureTime) {
+        return {
+          ...p,
+          arrivalTime: p.arrivalTime ?? session.timeSlots[0]?.startTime ?? '',
+          departureTime: p.departureTime ?? session.timeSlots[session.timeSlots.length - 1]?.endTime ?? '',
+        }
+      }
+      return p
+    })
+    return session
   } catch {
     return null
   }
