@@ -13,7 +13,8 @@ export interface TimeSlot {
 export interface Player {
   id: string
   name: string
-  arrivalSlotId: string // references TimeSlot.id
+  arrivalTime: string   // "14:00" — hour the player arrives
+  departureTime: string // "18:00" — hour the player leaves
   status: PlayerStatus
 }
 

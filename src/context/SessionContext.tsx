@@ -26,7 +26,7 @@ interface SessionContextType {
   addPlayer: (name: string) => void
   removePlayer: (id: string) => void
   updatePlayerStatus: (id: string, status: Player['status']) => void
-  updatePlayerArrival: (id: string, slotId: string) => void
+  updatePlayerSchedule: (id: string, arrivalTime: string, departureTime: string) => void
   setRounds: (rounds: Session['rounds']) => void
   resetSession: () => void
 }
@@ -76,7 +76,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       players: [...s.players, {
         id: generateId(),
         name,
-        arrivalSlotId: s.timeSlots[0]?.id ?? '',
+        arrivalTime: s.timeSlots[0]?.startTime ?? '',
+        departureTime: s.timeSlots[s.timeSlots.length - 1]?.endTime ?? '',
         status: 'active' as const,
       }],
     })), [])
@@ -93,10 +94,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       players: s.players.map(p => p.id === id ? { ...p, status } : p),
     })), [])
 
-  const updatePlayerArrival = useCallback((id: string, slotId: string) =>
+  const updatePlayerSchedule = useCallback((id: string, arrivalTime: string, departureTime: string) =>
     setSession(s => ({
       ...s,
-      players: s.players.map(p => p.id === id ? { ...p, arrivalSlotId: slotId } : p),
+      players: s.players.map(p => p.id === id ? { ...p, arrivalTime, departureTime } : p),
     })), [])
 
   const setRounds = useCallback((rounds: Session['rounds']) =>
@@ -109,7 +110,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     <SessionContext.Provider value={{
       session, setDate, setVenue, setDefaultRate, setPlaySystem,
       addTimeSlot, removeTimeSlot, updateTimeSlot,
-      addPlayer, removePlayer, updatePlayerStatus, updatePlayerArrival,
+      addPlayer, removePlayer, updatePlayerStatus, updatePlayerSchedule,
       setRounds, resetSession,
     }}>
       {children}
