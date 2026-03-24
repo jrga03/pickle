@@ -54,6 +54,32 @@ describe('storage migration', () => {
     expect(loaded!.players[1].status).toBe('active')
     expect(loaded!.deferredPlayerIds).toEqual([])
   })
+
+  it('clears rounds when player IDs in rounds do not match session players', () => {
+    const staleSession = {
+      date: '2026-03-24',
+      venue: 'Court A',
+      defaultRate: 500,
+      timeSlots: [],
+      players: [
+        { id: 'p1', name: 'Jason', arrivalTime: '14:00', departureTime: '18:00', status: 'active' },
+      ],
+      rounds: [{
+        id: 'r1',
+        games: [{
+          court: 1,
+          team1: ['stale-uuid-1', 'stale-uuid-2'],
+          team2: ['stale-uuid-3', 'stale-uuid-4'],
+        }],
+        sittingOut: [],
+      }],
+      playSystem: 'paddle-queue',
+      deferredPlayerIds: [],
+    }
+    localStorage.setItem('pickleball-session', JSON.stringify(staleSession))
+    const loaded = loadSession()
+    expect(loaded!.rounds).toEqual([])
+  })
 })
 
 describe('venue storage', () => {

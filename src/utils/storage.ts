@@ -33,6 +33,16 @@ export function loadSession(): Session | null {
     if (!session.deferredPlayerIds) {
       session.deferredPlayerIds = []
     }
+    // Clear rounds if they reference player IDs not in the current player list
+    const playerIdSet = new Set(session.players.map(p => p.id))
+    const hasStaleRounds = session.rounds.some(round =>
+      round.games.some(game =>
+        [...game.team1, ...game.team2].some(id => !playerIdSet.has(id))
+      ) || round.sittingOut.some(id => !playerIdSet.has(id))
+    )
+    if (hasStaleRounds) {
+      session.rounds = []
+    }
     return session
   } catch {
     return null
