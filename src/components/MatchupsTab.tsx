@@ -67,11 +67,16 @@ export function MatchupsTab() {
   const currentRound = session.rounds.length > 0 ? session.rounds[session.rounds.length - 1] : null
   const previousRounds = session.rounds.slice(0, -1)
 
-  const toggleStaying = (playerId: string) => {
+  const toggleWinningTeam = (team: string[], opposingTeam: string[]) => {
     setStayingIds(prev => {
       const next = new Set(prev)
-      if (next.has(playerId)) next.delete(playerId)
-      else next.add(playerId)
+      const allSelected = team.every(id => next.has(id))
+      if (allSelected) {
+        team.forEach(id => next.delete(id))
+      } else {
+        team.forEach(id => next.add(id))
+        opposingTeam.forEach(id => next.delete(id))
+      }
       return next
     })
   }
@@ -94,10 +99,6 @@ export function MatchupsTab() {
     setRounds(updatedRounds)
     setDeferredPlayerIds([...session.deferredPlayerIds, playerId])
   }
-
-  const currentPlayingIds = currentRound
-    ? new Set(currentRound.games.flatMap(g => [...g.team1, ...g.team2]))
-    : new Set<string>()
 
   return (
     <div className="space-y-4">
@@ -230,23 +231,40 @@ export function MatchupsTab() {
           )}
 
           {session.playSystem === 'challenge-court' && (
-            <div className="bg-blue-50 rounded-lg border border-blue-200 p-3 space-y-2">
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-3 space-y-3">
               <p className="text-xs font-medium text-blue-800">Winners stay on court?</p>
-              <div className="flex flex-wrap gap-2">
-                {[...currentPlayingIds].map(id => (
-                  <button
-                    key={id}
-                    onClick={() => toggleStaying(id)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium min-h-[32px] ${
-                      stayingIds.has(id)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300'
-                    }`}
-                  >
-                    {getName(id)}
-                  </button>
-                ))}
-              </div>
+              {currentRound.games.map(game => {
+                const team1Selected = game.team1.every(id => stayingIds.has(id))
+                const team2Selected = game.team2.every(id => stayingIds.has(id))
+                return (
+                  <div key={game.court} className="space-y-1">
+                    <p className="text-xs text-gray-400">Court {game.court}</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleWinningTeam([...game.team1], [...game.team2])}
+                        className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium min-h-[40px] ${
+                          team1Selected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300'
+                        }`}
+                      >
+                        {game.team1.map(getName).join(', ')}
+                      </button>
+                      <span className="text-xs text-gray-400">vs</span>
+                      <button
+                        onClick={() => toggleWinningTeam([...game.team2], [...game.team1])}
+                        className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium min-h-[40px] ${
+                          team2Selected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300'
+                        }`}
+                      >
+                        {game.team2.map(getName).join(', ')}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
