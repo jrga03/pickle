@@ -84,20 +84,20 @@ export function Autocomplete({
         }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base"
+        className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-base bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50"
       />
       {showSuggestions && filtered.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+        <ul className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg max-h-48 overflow-y-auto">
           {filtered.map(item => (
             <li
               key={item.id}
-              className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 cursor-pointer min-h-[44px]"
+              className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer min-h-[44px]"
               onMouseDown={() => handleSelect(item)}
             >
-              <span className="text-gray-900">{item.label}</span>
+              <span className="text-gray-900 dark:text-gray-50">{item.label}</span>
               <button
                 onMouseDown={e => handleDelete(e, item.id)}
-                className="text-gray-400 hover:text-red-500 p-1 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1 min-h-[32px] min-w-[32px] flex items-center justify-center"
                 aria-label={`Delete ${item.label}`}
               >
                 ✕

@@ -102,15 +102,15 @@ export function MatchupsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
         {(Object.entries(systemLabels) as [PlaySystem, string][]).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setPlaySystem(key)}
             className={`flex-1 rounded-md py-2 text-xs font-medium min-h-[40px] ${
               session.playSystem === key
-                ? 'bg-white text-green-700 shadow-sm'
-                : 'text-gray-500'
+                ? 'bg-white dark:bg-gray-900 text-green-700 dark:text-green-300 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400'
             }`}
           >
             {label}
@@ -120,7 +120,7 @@ export function MatchupsTab() {
 
       {session.players.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Roster</h3>
+          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Roster</h3>
           <div className="flex flex-wrap gap-2">
             {session.players.map(player => (
               <button
@@ -128,8 +128,8 @@ export function MatchupsTab() {
                 onClick={() => updatePlayerStatus(player.id, player.status === 'active' ? 'left' : 'active')}
                 className={`rounded-full px-3 py-1.5 text-sm font-medium min-h-[32px] ${
                   player.status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-500 line-through'
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 line-through'
                 }`}
               >
                 {player.name}
@@ -140,7 +140,7 @@ export function MatchupsTab() {
       )}
 
       {activePlayers.length < 4 && (
-        <p className="text-sm text-amber-600 bg-amber-50 rounded-lg p-3">
+        <p className="text-sm text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 rounded-lg p-3">
           Need at least 4 active players to generate matchups. Currently: {activePlayers.length}
         </p>
       )}
@@ -149,14 +149,14 @@ export function MatchupsTab() {
         <button
           onClick={generateRound}
           disabled={activePlayers.length < 4}
-          className="flex-1 rounded-lg bg-green-600 text-white py-2.5 text-sm font-medium disabled:opacity-50 min-h-[44px]"
+          className="flex-1 rounded-lg bg-green-600 dark:bg-green-700 text-white py-2.5 text-sm font-medium disabled:opacity-50 min-h-[44px]"
         >
           {session.rounds.length === 0 ? 'Generate Matchups' : 'Next Round'}
         </button>
         {session.rounds.length > 0 && (
           <button
             onClick={regenerateLastRound}
-            className="rounded-lg border border-gray-300 text-gray-700 px-4 py-2.5 text-sm font-medium min-h-[44px]"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2.5 text-sm font-medium min-h-[44px]"
           >
             Reshuffle
           </button>
@@ -165,22 +165,22 @@ export function MatchupsTab() {
 
       {currentRound && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Round {session.rounds.length}
           </h3>
 
           {currentRound.games.map(game => (
-            <div key={game.court} className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-xs font-medium text-gray-400 mb-2">Court {game.court}</p>
+            <div key={game.court} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">Court {game.court}</p>
               <div className="flex items-center justify-between">
                 <div className="text-center flex-1 space-y-1">
                   {game.team1.map(id => (
                     <div key={id} className="flex items-center justify-center gap-1">
-                      <p className="font-medium text-gray-900">{getName(id)}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
                       {currentRound.sittingOut.length > 0 && (
                         <button
                           onClick={() => deferPlayer(id)}
-                          className="text-xs text-amber-600 hover:text-amber-800 px-1"
+                          className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
                           title="Defer to next round"
                         >
                           defer
@@ -189,15 +189,15 @@ export function MatchupsTab() {
                     </div>
                   ))}
                 </div>
-                <span className="text-gray-400 font-bold px-3">vs</span>
+                <span className="text-gray-400 dark:text-gray-500 font-bold px-3">vs</span>
                 <div className="text-center flex-1 space-y-1">
                   {game.team2.map(id => (
                     <div key={id} className="flex items-center justify-center gap-1">
-                      <p className="font-medium text-gray-900">{getName(id)}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
                       {currentRound.sittingOut.length > 0 && (
                         <button
                           onClick={() => deferPlayer(id)}
-                          className="text-xs text-amber-600 hover:text-amber-800 px-1"
+                          className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
                           title="Defer to next round"
                         >
                           defer
@@ -211,16 +211,16 @@ export function MatchupsTab() {
           ))}
 
           {currentRound.sittingOut.length > 0 && (
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
-              <p className="text-xs font-medium text-gray-400 mb-1">Sitting Out</p>
+            <div className="bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">Sitting Out</p>
               <div className="flex flex-wrap gap-1">
                 {currentRound.sittingOut.map(id => (
                   <span
                     key={id}
                     className={`text-sm px-2 py-0.5 rounded ${
                       session.deferredPlayerIds.includes(id)
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'text-gray-700'
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+                        : 'text-gray-700 dark:text-gray-200'
                     }`}
                   >
                     {getName(id)}{session.deferredPlayerIds.includes(id) ? ' (next round)' : ''}
@@ -231,32 +231,32 @@ export function MatchupsTab() {
           )}
 
           {session.playSystem === 'challenge-court' && (
-            <div className="bg-blue-50 rounded-lg border border-blue-200 p-3 space-y-3">
-              <p className="text-xs font-medium text-blue-800">Winners stay on court?</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-3 space-y-3">
+              <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Winners stay on court?</p>
               {currentRound.games.map(game => {
                 const team1Selected = game.team1.every(id => stayingIds.has(id))
                 const team2Selected = game.team2.every(id => stayingIds.has(id))
                 return (
                   <div key={game.court} className="space-y-1">
-                    <p className="text-xs text-gray-400">Court {game.court}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Court {game.court}</p>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => toggleWinningTeam([...game.team1], [...game.team2])}
                         className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium min-h-[40px] ${
                           team1Selected
                             ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300'
+                            : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600'
                         }`}
                       >
                         {game.team1.map(getName).join(', ')}
                       </button>
-                      <span className="text-xs text-gray-400">vs</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">vs</span>
                       <button
                         onClick={() => toggleWinningTeam([...game.team2], [...game.team1])}
                         className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium min-h-[40px] ${
                           team2Selected
                             ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300'
+                            : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600'
                         }`}
                       >
                         {game.team2.map(getName).join(', ')}
@@ -272,31 +272,31 @@ export function MatchupsTab() {
 
       {previousRounds.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Previous Rounds
           </h3>
           {previousRounds.map((round, idx) => (
-            <div key={round.id} className="bg-white rounded-lg border border-gray-200">
+            <div key={round.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
-                className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 min-h-[44px]"
+                className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 min-h-[44px]"
               >
                 Round {idx + 1} — {round.games.length} game{round.games.length !== 1 ? 's' : ''}
-                <span className="float-right text-gray-400">
+                <span className="float-right text-gray-400 dark:text-gray-500">
                   {expandedRound === round.id ? '▲' : '▼'}
                 </span>
               </button>
               {expandedRound === round.id && (
                 <div className="px-4 pb-3 space-y-2">
                   {round.games.map(game => (
-                    <div key={game.court} className="text-sm text-gray-600">
-                      <span className="text-gray-400">Court {game.court}:</span>{' '}
+                    <div key={game.court} className="text-sm text-gray-600 dark:text-gray-300">
+                      <span className="text-gray-400 dark:text-gray-500">Court {game.court}:</span>{' '}
                       {getName(game.team1[0])} & {getName(game.team1[1])} vs{' '}
                       {getName(game.team2[0])} & {getName(game.team2[1])}
                     </div>
                   ))}
                   {round.sittingOut.length > 0 && (
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-gray-400 dark:text-gray-500">
                       Sat out: {round.sittingOut.map(getName).join(', ')}
                     </div>
                   )}

@@ -5,15 +5,17 @@ import { SetupTab } from './components/SetupTab'
 import { PlayersTab } from './components/PlayersTab'
 import { MatchupsTab } from './components/MatchupsTab'
 import { ExpensesTab } from './components/ExpensesTab'
+import { ThemeToggle } from './components/ThemeToggle'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Setup')
 
   return (
     <SessionProvider>
-      <div className="min-h-dvh bg-gray-50 pb-16">
-        <header className="bg-green-600 text-white p-4">
+      <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 pb-16">
+        <header className="bg-green-600 dark:bg-green-800 text-white p-4 flex justify-between items-center">
           <h1 className="text-lg font-bold">Pickleball</h1>
+          <ThemeToggle />
         </header>
         <main className="p-4">
           {activeTab === 'Setup' && <SetupTab />}
