@@ -10,7 +10,7 @@ const systemLabels: Record<PlaySystem, string> = {
 }
 
 export function MatchupsTab() {
-  const { session, setPlaySystem, setRounds } = useSession()
+  const { session, setPlaySystem, setRounds, updatePlayerStatus, setDeferredPlayerIds } = useSession()
   const [stayingIds, setStayingIds] = useState<Set<string>>(new Set())
   const [expandedRound, setExpandedRound] = useState<string | null>(null)
 
@@ -28,17 +28,18 @@ export function MatchupsTab() {
 
     switch (session.playSystem) {
       case 'paddle-queue':
-        round = generatePaddleQueueRound(playerIds, currentCourts)
+        round = generatePaddleQueueRound(playerIds, currentCourts, session.deferredPlayerIds)
         break
       case 'round-robin':
-        round = generateRoundRobinRound(playerIds, currentCourts, session.rounds)
+        round = generateRoundRobinRound(playerIds, currentCourts, session.rounds, session.deferredPlayerIds)
         break
       case 'challenge-court':
-        round = generateChallengeCourtRound(playerIds, currentCourts, [...stayingIds])
+        round = generateChallengeCourtRound(playerIds, currentCourts, [...stayingIds], session.deferredPlayerIds)
         break
     }
 
     setRounds([...session.rounds, round])
+    setDeferredPlayerIds([])
     setStayingIds(new Set())
   }
 
@@ -50,13 +51,13 @@ export function MatchupsTab() {
 
     switch (session.playSystem) {
       case 'paddle-queue':
-        round = generatePaddleQueueRound(playerIds, currentCourts)
+        round = generatePaddleQueueRound(playerIds, currentCourts, session.deferredPlayerIds)
         break
       case 'round-robin':
-        round = generateRoundRobinRound(playerIds, currentCourts, prevRounds)
+        round = generateRoundRobinRound(playerIds, currentCourts, prevRounds, session.deferredPlayerIds)
         break
       case 'challenge-court':
-        round = generateChallengeCourtRound(playerIds, currentCourts, [...stayingIds])
+        round = generateChallengeCourtRound(playerIds, currentCourts, [...stayingIds], session.deferredPlayerIds)
         break
     }
 
@@ -73,6 +74,25 @@ export function MatchupsTab() {
       else next.add(playerId)
       return next
     })
+  }
+
+  const deferPlayer = (playerId: string) => {
+    if (!currentRound) return
+    const sittingOut = [...currentRound.sittingOut]
+    if (sittingOut.length === 0) return
+
+    const replacement = sittingOut.shift()!
+    const updatedGames = currentRound.games.map(game => ({
+      ...game,
+      team1: game.team1.map(id => id === playerId ? replacement : id) as [string, string],
+      team2: game.team2.map(id => id === playerId ? replacement : id) as [string, string],
+    }))
+
+    sittingOut.push(playerId)
+    const updatedRound = { ...currentRound, games: updatedGames, sittingOut }
+    const updatedRounds = [...session.rounds.slice(0, -1), updatedRound]
+    setRounds(updatedRounds)
+    setDeferredPlayerIds([...session.deferredPlayerIds, playerId])
   }
 
   const currentPlayingIds = currentRound
@@ -96,6 +116,27 @@ export function MatchupsTab() {
           </button>
         ))}
       </div>
+
+      {session.players.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Roster</h3>
+          <div className="flex flex-wrap gap-2">
+            {session.players.map(player => (
+              <button
+                key={player.id}
+                onClick={() => updatePlayerStatus(player.id, player.status === 'active' ? 'left' : 'active')}
+                className={`rounded-full px-3 py-1.5 text-sm font-medium min-h-[32px] ${
+                  player.status === 'active'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-500 line-through'
+                }`}
+              >
+                {player.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {activePlayers.length < 4 && (
         <p className="text-sm text-amber-600 bg-amber-50 rounded-lg p-3">
@@ -131,14 +172,38 @@ export function MatchupsTab() {
             <div key={game.court} className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-xs font-medium text-gray-400 mb-2">Court {game.court}</p>
               <div className="flex items-center justify-between">
-                <div className="text-center flex-1">
-                  <p className="font-medium text-gray-900">{getName(game.team1[0])}</p>
-                  <p className="font-medium text-gray-900">{getName(game.team1[1])}</p>
+                <div className="text-center flex-1 space-y-1">
+                  {game.team1.map(id => (
+                    <div key={id} className="flex items-center justify-center gap-1">
+                      <p className="font-medium text-gray-900">{getName(id)}</p>
+                      {currentRound.sittingOut.length > 0 && (
+                        <button
+                          onClick={() => deferPlayer(id)}
+                          className="text-xs text-amber-600 hover:text-amber-800 px-1"
+                          title="Defer to next round"
+                        >
+                          defer
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 <span className="text-gray-400 font-bold px-3">vs</span>
-                <div className="text-center flex-1">
-                  <p className="font-medium text-gray-900">{getName(game.team2[0])}</p>
-                  <p className="font-medium text-gray-900">{getName(game.team2[1])}</p>
+                <div className="text-center flex-1 space-y-1">
+                  {game.team2.map(id => (
+                    <div key={id} className="flex items-center justify-center gap-1">
+                      <p className="font-medium text-gray-900">{getName(id)}</p>
+                      {currentRound.sittingOut.length > 0 && (
+                        <button
+                          onClick={() => deferPlayer(id)}
+                          className="text-xs text-amber-600 hover:text-amber-800 px-1"
+                          title="Defer to next round"
+                        >
+                          defer
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -147,9 +212,20 @@ export function MatchupsTab() {
           {currentRound.sittingOut.length > 0 && (
             <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
               <p className="text-xs font-medium text-gray-400 mb-1">Sitting Out</p>
-              <p className="text-sm text-gray-700">
-                {currentRound.sittingOut.map(getName).join(', ')}
-              </p>
+              <div className="flex flex-wrap gap-1">
+                {currentRound.sittingOut.map(id => (
+                  <span
+                    key={id}
+                    className={`text-sm px-2 py-0.5 rounded ${
+                      session.deferredPlayerIds.includes(id)
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    {getName(id)}{session.deferredPlayerIds.includes(id) ? ' (next round)' : ''}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
