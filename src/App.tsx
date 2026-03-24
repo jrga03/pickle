@@ -4,6 +4,7 @@ import { TabBar, type Tab } from './components/TabBar'
 import { SetupTab } from './components/SetupTab'
 import { PlayersTab } from './components/PlayersTab'
 import { MatchupsTab } from './components/MatchupsTab'
+import { ExpensesTab } from './components/ExpensesTab'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Setup')
@@ -18,7 +19,7 @@ function App() {
           {activeTab === 'Setup' && <SetupTab />}
           {activeTab === 'Players' && <PlayersTab />}
           {activeTab === 'Matchups' && <MatchupsTab />}
-          {activeTab === 'Expenses' && <div>Expenses Tab</div>}
+          {activeTab === 'Expenses' && <ExpensesTab />}
         </main>
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
