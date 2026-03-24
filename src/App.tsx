@@ -3,6 +3,7 @@ import { SessionProvider } from './context/SessionContext'
 import { TabBar, type Tab } from './components/TabBar'
 import { SetupTab } from './components/SetupTab'
 import { PlayersTab } from './components/PlayersTab'
+import { MatchupsTab } from './components/MatchupsTab'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Setup')
@@ -16,7 +17,7 @@ function App() {
         <main className="p-4">
           {activeTab === 'Setup' && <SetupTab />}
           {activeTab === 'Players' && <PlayersTab />}
-          {activeTab === 'Matchups' && <div>Matchups Tab</div>}
+          {activeTab === 'Matchups' && <MatchupsTab />}
           {activeTab === 'Expenses' && <div>Expenses Tab</div>}
         </main>
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
