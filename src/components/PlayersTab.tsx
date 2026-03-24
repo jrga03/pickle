@@ -4,19 +4,7 @@ import { formatHour } from './SetupTab'
 import { parseHour } from '../utils/expenses'
 import { Autocomplete } from './Autocomplete'
 import { loadPlayers, savePlayers } from '../utils/storage'
-import type { PlayerStatus, SavedPlayer } from '../types'
-
-const statusColors: Record<PlayerStatus, string> = {
-  active: 'bg-green-100 text-green-800',
-  deferred: 'bg-yellow-100 text-yellow-800',
-  left: 'bg-gray-100 text-gray-600',
-}
-
-const nextStatus: Record<PlayerStatus, PlayerStatus> = {
-  active: 'deferred',
-  deferred: 'left',
-  left: 'active',
-}
+import type { SavedPlayer } from '../types'
 
 function toTimeStr(h: number): string {
   return `${String(h).padStart(2, '0')}:00`
@@ -27,7 +15,6 @@ export function PlayersTab() {
     session,
     addPlayer,
     removePlayer,
-    updatePlayerStatus,
     updatePlayerSchedule,
   } = useSession()
 
@@ -156,13 +143,6 @@ export function PlayersTab() {
                 </div>
               )}
             </div>
-
-            <button
-              onClick={() => updatePlayerStatus(player.id, nextStatus[player.status])}
-              className={`rounded-full px-3 py-1 text-xs font-medium min-h-[32px] ${statusColors[player.status]}`}
-            >
-              {player.status}
-            </button>
 
             <button
               onClick={() => removePlayer(player.id)}
