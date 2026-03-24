@@ -24,10 +24,10 @@ export function loadSession(): Session | null {
       }
       return p
     })
-    // Migrate deferred status to active
+    // Migrate deferred status to active (old data may contain 'deferred')
     session.players = session.players.map(p => ({
       ...p,
-      status: p.status === 'deferred' ? 'active' : p.status,
+      status: (p.status as string) === 'deferred' ? 'active' : p.status,
     }))
     // Initialize deferredPlayerIds if missing
     if (!session.deferredPlayerIds) {
