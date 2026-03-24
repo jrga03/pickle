@@ -39,3 +39,14 @@ export interface Session {
   rounds: Round[]
   playSystem: PlaySystem
 }
+
+export interface SavedVenue {
+  id: string
+  name: string
+  defaultRate: number
+}
+
+export interface SavedPlayer {
+  id: string
+  name: string
+}
