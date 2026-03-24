@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { SessionProvider } from './context/SessionContext'
 import { TabBar, type Tab } from './components/TabBar'
 import { SetupTab } from './components/SetupTab'
+import { PlayersTab } from './components/PlayersTab'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Setup')
@@ -14,7 +15,7 @@ function App() {
         </header>
         <main className="p-4">
           {activeTab === 'Setup' && <SetupTab />}
-          {activeTab === 'Players' && <div>Players Tab</div>}
+          {activeTab === 'Players' && <PlayersTab />}
           {activeTab === 'Matchups' && <div>Matchups Tab</div>}
           {activeTab === 'Expenses' && <div>Expenses Tab</div>}
         </main>
