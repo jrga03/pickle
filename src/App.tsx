@@ -13,7 +13,7 @@ function App() {
     <SessionProvider>
       <div className="min-h-dvh bg-gray-50 pb-16">
         <header className="bg-green-600 text-white p-4">
-          <h1 className="text-lg font-bold">Pickleball Open Play</h1>
+          <h1 className="text-lg font-bold">Pickleball</h1>
         </header>
         <main className="p-4">
           {activeTab === 'Setup' && <SetupTab />}

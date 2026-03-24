@@ -1,4 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="32" fill="#16a34a"/>
-  <text x="96" y="110" text-anchor="middle" font-family="system-ui, sans-serif" font-size="72" font-weight="700" fill="white">PB</text>
+  <rect width="192" height="192" rx="32" fill="#1a1a2e"/>
+  <circle cx="96" cy="96" r="64" fill="#c8e64a" stroke="#a3b838" stroke-width="3"/>
+  <circle cx="76" cy="72" r="7" fill="#a3b838"/>
+  <circle cx="104" cy="68" r="7" fill="#a3b838"/>
+  <circle cx="124" cy="88" r="7" fill="#a3b838"/>
+  <circle cx="68" cy="96" r="7" fill="#a3b838"/>
+  <circle cx="96" cy="96" r="7" fill="#a3b838"/>
+  <circle cx="120" cy="108" r="7" fill="#a3b838"/>
+  <circle cx="78" cy="118" r="7" fill="#a3b838"/>
+  <circle cx="106" cy="122" r="7" fill="#a3b838"/>
 </svg>
