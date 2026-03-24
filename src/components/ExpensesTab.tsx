@@ -48,7 +48,7 @@ export function ExpensesTab() {
       <div className="bg-green-50 rounded-lg border border-green-200 p-4 text-center">
         <p className="text-xs font-medium text-green-600 uppercase tracking-wide">Total Session Cost</p>
         <p className="text-2xl font-bold text-green-800 mt-1">
-          {totalCost.toFixed(2)} <span className="text-sm font-normal">PHP</span>
+          {totalCost.toFixed(2)}
         </p>
       </div>
 

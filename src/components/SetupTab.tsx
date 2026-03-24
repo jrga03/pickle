@@ -1,6 +1,19 @@
 import { useState } from 'react'
 import { useSession } from '../context/SessionContext'
 
+const hours = Array.from({ length: 18 }, (_, i) => {
+  const h = i + 6 // 6 AM to 11 PM
+  const value = `${String(h).padStart(2, '0')}:00`
+  const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`
+  return { value, label }
+})
+
+export function formatHour(time: string): string {
+  const h = parseInt(time.split(':')[0], 10)
+  if (isNaN(h)) return time
+  return h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`
+}
+
 export function SetupTab() {
   const {
     session,
@@ -57,7 +70,7 @@ export function SetupTab() {
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Default Rate per Court (PHP)</span>
+          <span className="text-sm font-medium text-gray-700">Court Rate</span>
           <input
             type="number"
             value={session.defaultRate || ''}
@@ -79,19 +92,23 @@ export function SetupTab() {
           <div key={slot.id} className="flex items-center gap-2 rounded-lg bg-white border border-gray-200 p-3">
             <div className="flex-1 space-y-2">
               <div className="flex gap-2">
-                <input
-                  type="time"
+                <select
                   value={slot.startTime}
                   onChange={e => updateTimeSlot(slot.id, { startTime: e.target.value })}
                   className="flex-1 rounded border border-gray-300 px-2 py-1.5 text-sm"
-                />
+                >
+                  <option value="">Start</option>
+                  {hours.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+                </select>
                 <span className="self-center text-gray-400">–</span>
-                <input
-                  type="time"
+                <select
                   value={slot.endTime}
                   onChange={e => updateTimeSlot(slot.id, { endTime: e.target.value })}
                   className="flex-1 rounded border border-gray-300 px-2 py-1.5 text-sm"
-                />
+                >
+                  <option value="">End</option>
+                  {hours.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+                </select>
               </div>
               <div className="flex gap-2">
                 <label className="flex items-center gap-1 text-sm text-gray-600">
@@ -131,19 +148,23 @@ export function SetupTab() {
         <div className="rounded-lg bg-green-50 border border-green-200 p-3 space-y-2">
           <p className="text-sm font-medium text-green-800">Add Time Slot</p>
           <div className="flex gap-2">
-            <input
-              type="time"
+            <select
               value={newSlot.startTime}
               onChange={e => setNewSlot(s => ({ ...s, startTime: e.target.value }))}
               className="flex-1 rounded border border-gray-300 px-2 py-1.5 text-sm"
-            />
+            >
+              <option value="">Start</option>
+              {hours.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+            </select>
             <span className="self-center text-gray-400">–</span>
-            <input
-              type="time"
+            <select
               value={newSlot.endTime}
               onChange={e => setNewSlot(s => ({ ...s, endTime: e.target.value }))}
               className="flex-1 rounded border border-gray-300 px-2 py-1.5 text-sm"
-            />
+            >
+              <option value="">End</option>
+              {hours.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+            </select>
           </div>
           <div className="flex gap-2">
             <label className="flex items-center gap-1 text-sm text-gray-600">

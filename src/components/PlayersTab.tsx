@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useSession } from '../context/SessionContext'
+import { formatHour } from './SetupTab'
+import { parseHour } from '../utils/expenses'
 import type { PlayerStatus } from '../types'
 
 const statusColors: Record<PlayerStatus, string> = {
@@ -14,13 +16,17 @@ const nextStatus: Record<PlayerStatus, PlayerStatus> = {
   left: 'active',
 }
 
+function toTimeStr(h: number): string {
+  return `${String(h).padStart(2, '0')}:00`
+}
+
 export function PlayersTab() {
   const {
     session,
     addPlayer,
     removePlayer,
     updatePlayerStatus,
-    updatePlayerArrival,
+    updatePlayerSchedule,
   } = useSession()
 
   const [name, setName] = useState('')
@@ -36,18 +42,36 @@ export function PlayersTab() {
     if (e.key === 'Enter') handleAdd()
   }
 
-  const slotPlayerCounts = session.timeSlots.map(slot => {
-    const count = session.players.filter(p => p.arrivalSlotId === slot.id).length
+  const slots = session.timeSlots
+  // Compute session hour range from all time slots
+  const sessionStartH = slots.length > 0
+    ? Math.min(...slots.map(s => parseHour(s.startTime)))
+    : 0
+  const sessionEndH = slots.length > 0
+    ? Math.max(...slots.map(s => parseHour(s.endTime)))
+    : 0
+
+  // Generate all hours within session range for arrival/departure pickers
+  const sessionHours: { value: string; label: string }[] = []
+  for (let h = sessionStartH; h <= sessionEndH; h++) {
+    sessionHours.push({ value: toTimeStr(h), label: formatHour(toTimeStr(h)) })
+  }
+
+  // Count players present per slot
+  const slotPlayerCounts = slots.map(slot => {
+    const count = session.players.filter(p =>
+      p.arrivalTime <= slot.startTime && p.departureTime >= slot.endTime
+    ).length
     return { slot, count }
   })
 
   return (
     <div className="space-y-4">
-      {session.timeSlots.length > 0 && (
+      {slots.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {slotPlayerCounts.map(({ slot, count }) => (
             <span key={slot.id} className="text-xs bg-gray-100 rounded-full px-3 py-1 text-gray-600">
-              {slot.startTime}–{slot.endTime}: {count} player{count !== 1 ? 's' : ''}
+              {formatHour(slot.startTime)}–{formatHour(slot.endTime)}: {count} player{count !== 1 ? 's' : ''}
             </span>
           ))}
         </div>
@@ -82,18 +106,32 @@ export function PlayersTab() {
           <li key={player.id} className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-3">
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-900 truncate">{player.name}</p>
-              {session.timeSlots.length > 0 && (
-                <select
-                  value={player.arrivalSlotId}
-                  onChange={e => updatePlayerArrival(player.id, e.target.value)}
-                  className="mt-1 text-xs rounded border border-gray-200 px-1 py-0.5 text-gray-600"
-                >
-                  {session.timeSlots.map(slot => (
-                    <option key={slot.id} value={slot.id}>
-                      {slot.startTime}–{slot.endTime}
-                    </option>
-                  ))}
-                </select>
+              {sessionHours.length > 1 && (
+                <div className="mt-1 flex items-center gap-1">
+                  <select
+                    value={player.arrivalTime}
+                    onChange={e => updatePlayerSchedule(player.id, e.target.value, player.departureTime)}
+                    className="text-xs rounded border border-gray-200 px-1 py-0.5 text-gray-600"
+                  >
+                    {sessionHours
+                      .filter(h => h.value < player.departureTime)
+                      .map(h => (
+                        <option key={h.value} value={h.value}>{h.label}</option>
+                      ))}
+                  </select>
+                  <span className="text-xs text-gray-400">–</span>
+                  <select
+                    value={player.departureTime}
+                    onChange={e => updatePlayerSchedule(player.id, player.arrivalTime, e.target.value)}
+                    className="text-xs rounded border border-gray-200 px-1 py-0.5 text-gray-600"
+                  >
+                    {sessionHours
+                      .filter(h => h.value > player.arrivalTime)
+                      .map(h => (
+                        <option key={h.value} value={h.value}>{h.label}</option>
+                      ))}
+                  </select>
+                </div>
               )}
             </div>
 
