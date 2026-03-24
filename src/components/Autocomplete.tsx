@@ -42,7 +42,7 @@ export function Autocomplete({
 
   const handleSelect = (item: AutocompleteSuggestion) => {
     onSelect(item)
-    setValue('')
+    if (!onChange) setInternalValue('')
     setShowSuggestions(false)
   }
 
