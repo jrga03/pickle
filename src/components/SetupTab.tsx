@@ -4,8 +4,7 @@ import { Autocomplete } from './Autocomplete'
 import { loadVenues, saveVenues } from '../utils/storage'
 import type { SavedVenue } from '../types'
 
-const hours = Array.from({ length: 18 }, (_, i) => {
-  const h = i + 6 // 6 AM to 11 PM
+const hours = Array.from({ length: 24 }, (_, h) => {
   const value = `${String(h).padStart(2, '0')}:00`
   const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`
   return { value, label }
