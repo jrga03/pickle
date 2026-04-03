@@ -6,6 +6,7 @@ import { PlayersTab } from './components/PlayersTab'
 import { MatchupsTab } from './components/MatchupsTab'
 import { ExpensesTab } from './components/ExpensesTab'
 import { ThemeToggle } from './components/ThemeToggle'
+import { ReloadPrompt } from './components/ReloadPrompt'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Setup')
@@ -23,6 +24,7 @@ function App() {
           {activeTab === 'Matchups' && <MatchupsTab />}
           {activeTab === 'Expenses' && <ExpensesTab />}
         </main>
+        <ReloadPrompt />
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </SessionProvider>
