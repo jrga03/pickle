@@ -39,7 +39,12 @@ export function ReloadPrompt() {
           A new version is available
         </span>
         <button
-          onClick={() => updateServiceWorker(true)}
+          onClick={() => {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              window.location.reload()
+            })
+            updateServiceWorker(true)
+          }}
           className="shrink-0 rounded-lg bg-green-600 dark:bg-green-700 px-4 py-2 text-sm font-medium text-white"
         >
           Update
