@@ -14,7 +14,7 @@ function App() {
   return (
     <SessionProvider>
       <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 pb-16 overflow-x-hidden">
-        <header className="bg-green-600 dark:bg-green-800 text-white p-4 flex justify-between items-center">
+        <header className="bg-green-600 dark:bg-green-800 text-white p-4 flex justify-between items-center" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
           <h1 className="text-lg font-bold">Pickleball</h1>
           <ThemeToggle />
         </header>
