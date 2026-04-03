@@ -93,7 +93,7 @@ export function SetupTab() {
             type="date"
             value={session.date}
             onChange={e => setDate(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-base bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50"
+            className="mt-1 block w-full min-w-0 max-w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-base bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50"
           />
         </label>
 

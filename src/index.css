@@ -2,11 +2,15 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-html {
+html,
+body {
   background-color: #f9fafb;
+  color-scheme: light;
 }
-html:where(.dark) {
+html:where(.dark),
+html:where(.dark) body {
   background-color: #030712;
+  color-scheme: dark;
 }
 
 @keyframes slide-up {
