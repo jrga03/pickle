@@ -2,6 +2,13 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+html {
+  background-color: #f9fafb;
+}
+html:where(.dark) {
+  background-color: #030712;
+}
+
 @keyframes slide-up {
   from {
     opacity: 0;
