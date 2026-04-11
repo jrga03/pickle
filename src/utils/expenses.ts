@@ -94,56 +94,37 @@ export function formatExpenseText(
   if (session.venue) lines.push(session.venue)
   lines.push('')
 
-  const slots = [...session.timeSlots].sort((a, b) => {
-    const durationA = parseHour(a.endTime) - parseHour(a.startTime)
-    const durationB = parseHour(b.endTime) - parseHour(b.startTime)
-    return durationB - durationA
+  // Group players by their actual play time (arrival-departure)
+  const groups = new Map<string, { start: number; end: number; entries: { name: string; total: number }[] }>()
+  for (const player of session.players) {
+    const expense = expenses.find(e => e.playerId === player.id)
+    if (!expense || expense.total === 0) continue
+
+    const start = parseHour(player.arrivalTime)
+    const end = parseHour(player.departureTime)
+    const key = `${start}-${end}`
+    if (!groups.has(key)) groups.set(key, { start, end, entries: [] })
+    groups.get(key)!.entries.push({ name: player.name, total: expense.total })
+  }
+
+  // Sort groups: longest duration first, then earlier start
+  const sortedGroups = [...groups.entries()].sort((a, b) => {
+    const aDur = a[1].end - a[1].start
+    const bDur = b[1].end - b[1].start
+    if (bDur !== aDur) return bDur - aDur
+    return a[1].start - b[1].start
   })
 
-  for (const slot of slots) {
-    const slotStart = parseHour(slot.startTime)
-    const slotEnd = parseHour(slot.endTime)
+  for (const [, group] of sortedGroups) {
+    const label = `${formatHourShort(`${group.start}:00`)}-${formatHourShort(`${group.end}:00`)}`
+    lines.push(label)
 
-    const playerEntries = session.players
-      .filter(p => playerHoursInSlot(p, slot) > 0)
-      .map(p => {
-        const actualStart = Math.max(slotStart, parseHour(p.arrivalTime))
-        const actualEnd = Math.min(slotEnd, parseHour(p.departureTime))
-        const expense = expenses.find(e => e.playerId === p.id)
-        const share = expense?.slotBreakdown.find(sb => sb.slotId === slot.id)?.share ?? 0
-        return { name: p.name, actualStart, actualEnd, share }
-      })
-
-    // Group by actual time range
-    const groups = new Map<string, typeof playerEntries>()
-    for (const entry of playerEntries) {
-      const key = `${entry.actualStart}-${entry.actualEnd}`
-      if (!groups.has(key)) groups.set(key, [])
-      groups.get(key)!.push(entry)
+    const sorted = group.entries.sort((a, b) => a.name.localeCompare(b.name))
+    for (const entry of sorted) {
+      lines.push(`  ${entry.name}: ${entry.total.toFixed(2)}`)
     }
-
-    // Sort groups: longest duration first, then earlier start
-    const sortedGroups = [...groups.entries()].sort((a, b) => {
-      const [aStart, aEnd] = a[0].split('-').map(Number)
-      const [bStart, bEnd] = b[0].split('-').map(Number)
-      const aDur = aEnd - aStart
-      const bDur = bEnd - bStart
-      if (bDur !== aDur) return bDur - aDur
-      return aStart - bStart
-    })
-
-    for (const [key, entries] of sortedGroups) {
-      const [start, end] = key.split('-').map(Number)
-      const label = `${formatHourShort(`${start}:00`)}-${formatHourShort(`${end}:00`)}`
-      lines.push(label)
-
-      const sorted = entries.sort((a, b) => a.name.localeCompare(b.name))
-      for (const entry of sorted) {
-        lines.push(`  ${entry.name}: ${entry.share.toFixed(2)}`)
-      }
-    }
-    lines.push('')
   }
+  lines.push('')
 
   const totalCost = expenses.reduce((sum, e) => sum + e.total, 0)
   lines.push(`Total: ${totalCost.toFixed(2)}`)
