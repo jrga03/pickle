@@ -78,8 +78,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       players: [...s.players, {
         id: generateId(),
         name,
-        arrivalTime: s.timeSlots[0]?.startTime ?? '',
-        departureTime: s.timeSlots[s.timeSlots.length - 1]?.endTime ?? '',
+        arrivalTime: s.timeSlots.length > 0
+          ? s.timeSlots.reduce((min, ts) => ts.startTime < min ? ts.startTime : min, s.timeSlots[0].startTime)
+          : '',
+        departureTime: s.timeSlots.length > 0
+          ? s.timeSlots.reduce((max, ts) => ts.endTime > max ? ts.endTime : max, s.timeSlots[0].endTime)
+          : '',
         status: 'active' as const,
       }],
     })), [])
