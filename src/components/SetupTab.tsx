@@ -10,6 +10,13 @@ const hours = Array.from({ length: 24 }, (_, h) => {
   return { value, label }
 })
 
+function endHoursFor(startTime: string) {
+  if (!startTime) return hours
+  const startH = parseInt(startTime.split(':')[0], 10)
+  const nextH = (startH + 1) % 24
+  return [...hours.slice(nextH), ...hours.slice(0, nextH)]
+}
+
 export function formatHour(time: string): string {
   const h = parseInt(time.split(':')[0], 10)
   if (isNaN(h)) return time
@@ -157,7 +164,7 @@ export function SetupTab() {
                   className="flex-1 rounded border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50"
                 >
                   <option value="">End</option>
-                  {hours.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+                  {endHoursFor(slot.startTime).map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
                 </select>
               </div>
               <div className="flex gap-2">
@@ -213,7 +220,7 @@ export function SetupTab() {
               className="flex-1 rounded border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50"
             >
               <option value="">End</option>
-              {hours.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+              {endHoursFor(newSlot.startTime).map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
             </select>
           </div>
           <div className="flex gap-2">
