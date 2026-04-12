@@ -19,63 +19,76 @@ export function parseHour(time: string): number {
   return parseInt(time.split(':')[0], 10)
 }
 
-function playerHoursInSlot(player: Player, slot: TimeSlot): number {
-  const slotStart = parseHour(slot.startTime)
-  const slotEnd = parseHour(slot.endTime)
-  const playerStart = parseHour(player.arrivalTime)
-  const playerEnd = parseHour(player.departureTime)
-
-  const overlapStart = Math.max(slotStart, playerStart)
-  const overlapEnd = Math.min(slotEnd, playerEnd)
-  return Math.max(0, overlapEnd - overlapStart)
-}
-
 export function calculateExpenses(
   slots: TimeSlot[],
   players: Player[],
   defaultRate: number,
 ): PlayerExpense[] {
-  const slotData = slots.map(slot => {
+  const playerTotals = new Map<string, { slotBreakdown: SlotExpense[]; total: number }>()
+  for (const player of players) {
+    playerTotals.set(player.id, { slotBreakdown: [], total: 0 })
+  }
+
+  for (const slot of slots) {
     const rate = slot.rateOverride ?? defaultRate
-    const slotHours = parseHour(slot.endTime) - parseHour(slot.startTime)
-    const cost = slotHours * slot.numCourts * rate
+    const slotStart = parseHour(slot.startTime)
+    const slotEnd = parseHour(slot.endTime)
+    const slotCost = (slotEnd - slotStart) * slot.numCourts * rate
 
-    const playerHours = players.map(p => ({
-      player: p,
-      hours: playerHoursInSlot(p, slot),
-    })).filter(ph => ph.hours > 0)
+    // Collect hour boundaries where the set of present players changes
+    const boundaries = new Set<number>([slotStart, slotEnd])
+    for (const p of players) {
+      const arr = parseHour(p.arrivalTime)
+      if (arr > slotStart && arr < slotEnd) boundaries.add(arr)
+      const dep = parseHour(p.departureTime)
+      if (dep > slotStart && dep < slotEnd) boundaries.add(dep)
+    }
+    const sorted = [...boundaries].sort((a, b) => a - b)
 
-    const totalPlayerHours = playerHours.reduce((sum, ph) => sum + ph.hours, 0)
+    // Split each sub-period's cost evenly among players present
+    const shares = new Map<string, number>()
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const subStart = sorted[i]
+      const subEnd = sorted[i + 1]
+      const subCost = (subEnd - subStart) * slot.numCourts * rate
 
-    return { slot, cost, playerHours, totalPlayerHours }
-  })
+      const present = players.filter(p => {
+        const pStart = parseHour(p.arrivalTime)
+        const pEnd = parseHour(p.departureTime)
+        return pStart <= subStart && pEnd >= subEnd
+      })
 
-  return players.map(player => {
-    const slotBreakdown: SlotExpense[] = []
-    let total = 0
-
-    for (const { slot, cost, playerHours, totalPlayerHours } of slotData) {
-      const ph = playerHours.find(ph => ph.player.id === player.id)
-      if (ph) {
-        const share = totalPlayerHours > 0 ? (ph.hours / totalPlayerHours) * cost : 0
-        slotBreakdown.push({
-          slotId: slot.id,
-          slotLabel: `${slot.startTime}-${slot.endTime}`,
-          cost,
-          playerCount: playerHours.length,
-          share,
-        })
-        total += share
+      if (present.length === 0) continue
+      const each = subCost / present.length
+      for (const p of present) {
+        shares.set(p.id, (shares.get(p.id) ?? 0) + each)
       }
     }
 
-    return {
-      playerId: player.id,
-      playerName: player.name,
-      slotBreakdown,
-      total,
+    const playersInSlot = players.filter(p => (shares.get(p.id) ?? 0) > 0)
+
+    for (const player of players) {
+      const share = shares.get(player.id) ?? 0
+      if (share > 0) {
+        const data = playerTotals.get(player.id)!
+        data.slotBreakdown.push({
+          slotId: slot.id,
+          slotLabel: `${slot.startTime}-${slot.endTime}`,
+          cost: slotCost,
+          playerCount: playersInSlot.length,
+          share,
+        })
+        data.total += share
+      }
     }
-  })
+  }
+
+  return players.map(player => ({
+    playerId: player.id,
+    playerName: player.name,
+    slotBreakdown: playerTotals.get(player.id)!.slotBreakdown,
+    total: playerTotals.get(player.id)!.total,
+  }))
 }
 
 function formatHourShort(time: string): string {

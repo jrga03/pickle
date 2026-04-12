@@ -100,4 +100,34 @@ describe('calculateExpenses', () => {
     expect(result[0]).toHaveProperty('total')
     expect(result[0]).toHaveProperty('slotBreakdown')
   })
+
+  it('splits multi-hour slot by sub-period, not proportionally', () => {
+    // Single 3-hour slot with staggered attendance
+    const multiSlot: TimeSlot[] = [
+      { id: 's1', startTime: '08:00', endTime: '11:00', numCourts: 1 },
+    ]
+    const staggeredPlayers: Player[] = [
+      { id: 'p1', name: 'Ace', arrivalTime: '08:00', departureTime: '11:00', status: 'active' },
+      { id: 'p2', name: 'Justine', arrivalTime: '08:00', departureTime: '09:00', status: 'active' },
+      { id: 'p3', name: 'Stef', arrivalTime: '08:00', departureTime: '10:00', status: 'active' },
+      { id: 'p4', name: 'RJ', arrivalTime: '09:00', departureTime: '11:00', status: 'active' },
+    ]
+    // Rate 600 → each hour costs 600
+    // 8-9: Ace, Justine, Stef (3 players) → 600/3 = 200 each
+    // 9-10: Ace, Stef, RJ (3 players) → 600/3 = 200 each
+    // 10-11: Ace, RJ (2 players) → 600/2 = 300 each
+    const result = calculateExpenses(multiSlot, staggeredPlayers, 600)
+
+    const ace = result.find(r => r.playerId === 'p1')!
+    expect(ace.total).toBeCloseTo(700, 1) // 200 + 200 + 300
+
+    const justine = result.find(r => r.playerId === 'p2')!
+    expect(justine.total).toBeCloseTo(200, 1) // 200
+
+    const stef = result.find(r => r.playerId === 'p3')!
+    expect(stef.total).toBeCloseTo(400, 1) // 200 + 200
+
+    const rj = result.find(r => r.playerId === 'p4')!
+    expect(rj.total).toBeCloseTo(500, 1) // 200 + 300
+  })
 })
