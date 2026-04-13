@@ -46,7 +46,6 @@ export function calculateExpenses(
     const sorted = [...boundaries].sort((a, b) => a - b)
 
     // Split each sub-period's cost evenly among players present
-    const shares = new Map<string, number>()
     for (let i = 0; i < sorted.length - 1; i++) {
       const subStart = sorted[i]
       const subEnd = sorted[i + 1]
@@ -61,24 +60,15 @@ export function calculateExpenses(
       if (present.length === 0) continue
       const each = subCost / present.length
       for (const p of present) {
-        shares.set(p.id, (shares.get(p.id) ?? 0) + each)
-      }
-    }
-
-    const playersInSlot = players.filter(p => (shares.get(p.id) ?? 0) > 0)
-
-    for (const player of players) {
-      const share = shares.get(player.id) ?? 0
-      if (share > 0) {
-        const data = playerTotals.get(player.id)!
+        const data = playerTotals.get(p.id)!
         data.slotBreakdown.push({
           slotId: slot.id,
-          slotLabel: `${slot.startTime}-${slot.endTime}`,
-          cost: slotCost,
-          playerCount: playersInSlot.length,
-          share,
+          slotLabel: `${String(subStart).padStart(2, '0')}:00-${String(subEnd).padStart(2, '0')}:00`,
+          cost: subCost,
+          playerCount: present.length,
+          share: each,
         })
-        data.total += share
+        data.total += each
       }
     }
   }

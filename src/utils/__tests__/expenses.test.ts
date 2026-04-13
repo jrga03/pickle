@@ -55,7 +55,7 @@ describe('calculateExpenses', () => {
 
     // Others in s3: 6 players (p1-p4, p6, p7) → 500/6 = 83.33
     const alice = result.find(r => r.playerId === 'p1')!
-    const aliceS3 = alice.slotBreakdown.find(s => s.slotId === 's3')!
+    const aliceS3 = alice.slotBreakdown.find(s => s.slotLabel === '15:00-16:00')!
     expect(aliceS3.share).toBeCloseTo(83.33, 1)
   })
 
