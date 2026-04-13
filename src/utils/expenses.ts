@@ -33,8 +33,6 @@ export function calculateExpenses(
     const rate = slot.rateOverride ?? defaultRate
     const slotStart = parseHour(slot.startTime)
     const slotEnd = parseHour(slot.endTime)
-    const slotCost = (slotEnd - slotStart) * slot.numCourts * rate
-
     // Collect hour boundaries where the set of present players changes
     const boundaries = new Set<number>([slotStart, slotEnd])
     for (const p of players) {
