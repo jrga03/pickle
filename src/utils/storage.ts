@@ -1,4 +1,31 @@
-import type { Session, SavedVenue, SavedPlayer, MatchupState } from '../types'
+import type { Session, SavedVenue, SavedPlayer, MatchupState, Game } from '../types'
+
+interface RawPlayer {
+  id: string
+  name: string
+  arrivalTime?: string
+  departureTime?: string
+  status: string
+}
+
+interface RawRound {
+  id: string
+  games: Game[]
+  sittingOut: string[]
+}
+
+interface RawSession {
+  date: string
+  venue: string
+  defaultRate: number
+  timeSlots: { startTime: string; endTime: string; numCourts: number; rateOverride?: number; id: string }[]
+  players: RawPlayer[]
+  rounds?: RawRound[]
+  matchupState?: MatchupState | null
+  roundHistory?: RawRound[]
+  playSystem: string
+  deferredPlayerIds?: string[]
+}
 
 const STORAGE_KEY = 'pickleball-session'
 const VENUES_KEY = 'pickleball-venues'
@@ -12,10 +39,10 @@ export function loadSession(): Session | null {
   const data = localStorage.getItem(STORAGE_KEY)
   if (!data) return null
   try {
-    const raw = JSON.parse(data)
+    const raw = JSON.parse(data) as unknown as RawSession
 
     // Migrate players from old arrivalSlotId to arrivalTime/departureTime
-    raw.players = (raw.players ?? []).map((p: any) => ({
+    raw.players = (raw.players ?? []).map(p => ({
       ...p,
       arrivalTime: p.arrivalTime ?? raw.timeSlots?.[0]?.startTime ?? '',
       departureTime: p.departureTime ?? raw.timeSlots?.[raw.timeSlots.length - 1]?.endTime ?? '',
@@ -27,11 +54,11 @@ export function loadSession(): Session | null {
       raw.deferredPlayerIds = []
     }
 
-    const playerIdSet = new Set(raw.players.map((p: any) => p.id))
+    const playerIdSet = new Set(raw.players.map(p => p.id))
 
     // Migrate old rounds[] to matchupState + roundHistory
     if (raw.rounds !== undefined && raw.matchupState === undefined) {
-      const rounds = raw.rounds as any[]
+      const rounds = raw.rounds
       if (rounds.length === 0) {
         raw.matchupState = null
         raw.roundHistory = []
@@ -52,17 +79,17 @@ export function loadSession(): Session | null {
 
     // Clean stale player IDs from matchupState
     if (raw.matchupState) {
-      const state = raw.matchupState as MatchupState
+      const state = raw.matchupState
       // Remove stale IDs from sittingOut
-      state.sittingOut = state.sittingOut.filter((id: string) => playerIdSet.has(id))
+      state.sittingOut = state.sittingOut.filter(id => playerIdSet.has(id))
       // Check games for stale IDs — dissolve affected games
-      const cleanGames = []
+      const cleanGames: Game[] = []
       const displaced: string[] = []
       for (const game of state.games) {
         const allIds = [...game.team1, ...game.team2]
-        const hasStale = allIds.some((id: string) => !playerIdSet.has(id))
+        const hasStale = allIds.some(id => !playerIdSet.has(id))
         if (hasStale) {
-          displaced.push(...allIds.filter((id: string) => playerIdSet.has(id)))
+          displaced.push(...allIds.filter(id => playerIdSet.has(id)))
         } else {
           cleanGames.push(game)
         }
@@ -73,9 +100,9 @@ export function loadSession(): Session | null {
     }
 
     // Clean stale IDs from deferredPlayerIds
-    raw.deferredPlayerIds = raw.deferredPlayerIds.filter((id: string) => playerIdSet.has(id))
+    raw.deferredPlayerIds = raw.deferredPlayerIds!.filter(id => playerIdSet.has(id))
 
-    return raw as Session
+    return raw as unknown as Session
   } catch {
     return null
   }

@@ -90,7 +90,7 @@ describe('storage migration — rounds to matchupState', () => {
     })
     expect(loaded!.roundHistory).toHaveLength(1)
     expect(loaded!.roundHistory[0].id).toBe('r1')
-    expect((loaded as any).rounds).toBeUndefined()
+    expect((loaded as unknown as Record<string, unknown>).rounds).toBeUndefined()
   })
 
   it('migrates empty rounds[] — matchupState is null, roundHistory is empty', () => {
