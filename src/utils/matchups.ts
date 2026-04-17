@@ -218,3 +218,42 @@ export function rotateChallengeCourtSingle(
 
   return { games: newGames, sittingOut: newQueue }
 }
+
+function normalizeArrangement(team1: string[], team2: string[]): string {
+  const t1 = [...team1].sort().join(',')
+  const t2 = [...team2].sort().join(',')
+  return [t1, t2].sort().join('|')
+}
+
+export function rerollCourt(
+  state: MatchupState,
+  courtNumber: number,
+): MatchupState {
+  const gameIndex = state.games.findIndex(g => g.court === courtNumber)
+  if (gameIndex === -1) return state
+
+  const game = state.games[gameIndex]
+  const players = [...game.team1, ...game.team2]
+
+  // All 3 possible 2v2 arrangements of 4 players
+  const arrangements: [[string, string], [string, string]][] = [
+    [[players[0], players[1]], [players[2], players[3]]],
+    [[players[0], players[2]], [players[1], players[3]]],
+    [[players[0], players[3]], [players[1], players[2]]],
+  ]
+
+  const currentKey = normalizeArrangement(game.team1, game.team2)
+  const alternatives = arrangements.filter(
+    ([t1, t2]) => normalizeArrangement(t1, t2) !== currentKey,
+  )
+
+  const chosen = alternatives[Math.floor(Math.random() * alternatives.length)]
+  const newGames = [...state.games]
+  newGames[gameIndex] = {
+    court: courtNumber,
+    team1: chosen[0],
+    team2: chosen[1],
+  }
+
+  return { games: newGames, sittingOut: state.sittingOut }
+}

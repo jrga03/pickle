@@ -5,6 +5,7 @@ import {
   generateChallengeCourtMatchups,
   rotateCourt,
   rotateChallengeCourtSingle,
+  rerollCourt,
 } from '../matchups'
 import type { MatchupState } from '../../types'
 
@@ -236,5 +237,73 @@ describe('rotateChallengeCourtSingle', () => {
       sittingOut: [],
     }
     expect(rotateChallengeCourtSingle(state, 99, 'team1')).toEqual(state)
+  })
+})
+
+describe('rerollCourt', () => {
+  it('produces a different team arrangement with same players', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e'],
+    }
+    const result = rerollCourt(state, 1)
+    const originalPlayers = ['a', 'b', 'c', 'd'].sort()
+    const newPlayers = [...result.games[0].team1, ...result.games[0].team2].sort()
+    expect(newPlayers).toEqual(originalPlayers)
+    const originalTeams = [['a', 'b'].sort().join(), ['c', 'd'].sort().join()].sort().join('|')
+    const newTeams = [
+      [...result.games[0].team1].sort().join(),
+      [...result.games[0].team2].sort().join(),
+    ].sort().join('|')
+    expect(newTeams).not.toEqual(originalTeams)
+  })
+
+  it('does not modify the sitting out queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f'],
+    }
+    const result = rerollCourt(state, 1)
+    expect(result.sittingOut).toEqual(['e', 'f'])
+  })
+
+  it('does not modify other courts', () => {
+    const state: MatchupState = {
+      games: [
+        { court: 1, team1: ['a', 'b'], team2: ['c', 'd'] },
+        { court: 2, team1: ['e', 'f'], team2: ['g', 'h'] },
+      ],
+      sittingOut: [],
+    }
+    const result = rerollCourt(state, 1)
+    expect(result.games.find(g => g.court === 2)).toEqual({
+      court: 2, team1: ['e', 'f'], team2: ['g', 'h'],
+    })
+  })
+
+  it('returns state unchanged for nonexistent court', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    expect(rerollCourt(state, 99)).toEqual(state)
+  })
+
+  it('always produces one of the 3 valid 2v2 arrangements', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    const validArrangements = new Set([
+      'a,b|c,d',
+      'a,c|b,d',
+      'a,d|b,c',
+    ])
+    const result = rerollCourt(state, 1)
+    const teams = [
+      [...result.games[0].team1].sort().join(','),
+      [...result.games[0].team2].sort().join(','),
+    ].sort().join('|')
+    expect(validArrangements.has(teams)).toBe(true)
   })
 })
