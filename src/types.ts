@@ -30,13 +30,19 @@ export interface Round {
   sittingOut: string[] // player IDs
 }
 
+export interface MatchupState {
+  games: Game[]
+  sittingOut: string[]
+}
+
 export interface Session {
   date: string
   venue: string
   defaultRate: number
   timeSlots: TimeSlot[]
   players: Player[]
-  rounds: Round[]
+  matchupState: MatchupState | null
+  roundHistory: Round[]
   playSystem: PlaySystem
   deferredPlayerIds: string[]
 }
