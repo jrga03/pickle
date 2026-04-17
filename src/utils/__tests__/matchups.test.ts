@@ -8,6 +8,7 @@ import {
   rerollCourt,
   addPlayerToMatchups,
   removePlayerFromMatchups,
+  snapshotToHistory,
 } from '../matchups'
 import type { MatchupState } from '../../types'
 
@@ -453,5 +454,27 @@ describe('removePlayerFromMatchups', () => {
     state = removePlayerFromMatchups(state, 'b')
     expect(state.games[0].team1).toEqual(['e', 'f'])
     expect(state.sittingOut).toEqual(['g'])
+  })
+})
+
+describe('snapshotToHistory', () => {
+  it('creates a Round with id from MatchupState', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f'],
+    }
+    const round = snapshotToHistory(state)
+    expect(round.id).toBeDefined()
+    expect(typeof round.id).toBe('string')
+    expect(round.id.length).toBeGreaterThan(0)
+    expect(round.games).toEqual(state.games)
+    expect(round.sittingOut).toEqual(state.sittingOut)
+  })
+
+  it('generates unique ids for different snapshots', () => {
+    const state: MatchupState = { games: [], sittingOut: [] }
+    const round1 = snapshotToHistory(state)
+    const round2 = snapshotToHistory(state)
+    expect(round1.id).not.toEqual(round2.id)
   })
 })

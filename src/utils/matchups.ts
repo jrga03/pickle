@@ -1,4 +1,4 @@
-import type { MatchupState, Game } from '../types'
+import type { MatchupState, Round, Game } from '../types'
 
 function shuffle<T>(arr: T[]): T[] {
   const result = [...arr]
@@ -309,4 +309,12 @@ export function removePlayerFromMatchups(
   }
 
   return state
+}
+
+export function snapshotToHistory(state: MatchupState): Round {
+  return {
+    id: crypto.randomUUID(),
+    games: state.games,
+    sittingOut: state.sittingOut,
+  }
 }
