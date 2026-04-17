@@ -1,4 +1,4 @@
-import type { Round, Game } from '../types'
+import type { MatchupState, Game } from '../types'
 
 function shuffle<T>(arr: T[]): T[] {
   const result = [...arr]
@@ -9,13 +9,11 @@ function shuffle<T>(arr: T[]): T[] {
   return result
 }
 
-const generateId = () => crypto.randomUUID()
-
-export function generatePaddleQueueRound(
+export function generatePaddleQueueMatchups(
   playerIds: string[],
   numCourts: number,
   deferredPlayerIds: string[] = [],
-): Round {
+): MatchupState {
   const deferred = deferredPlayerIds.filter(id => playerIds.includes(id))
   const rest = shuffle(playerIds.filter(id => !deferredPlayerIds.includes(id)))
   const shuffled = [...deferred, ...rest]
@@ -38,7 +36,7 @@ export function generatePaddleQueueRound(
     sittingOut.push(shuffled[i])
   }
 
-  return { id: generateId(), games, sittingOut }
+  return { games, sittingOut }
 }
 
 function getPartnerKey(a: string, b: string): string {
@@ -58,18 +56,18 @@ function getPreviousPartners(
   return partners
 }
 
-export function generateRoundRobinRound(
+export function generateRoundRobinMatchups(
   playerIds: string[],
   numCourts: number,
   previousRounds: { games: { team1: [string, string]; team2: [string, string] }[] }[],
   deferredPlayerIds: string[] = [],
-): Round {
+): MatchupState {
   const usedPartners = getPreviousPartners(previousRounds)
   const maxGames = Math.min(numCourts, Math.floor(playerIds.length / 4))
   const deferred = deferredPlayerIds.filter(id => playerIds.includes(id))
   const restIds = playerIds.filter(id => !deferredPlayerIds.includes(id))
 
-  let bestRound: Round | null = null
+  let bestRound: MatchupState | null = null
   let bestRepeats = Infinity
 
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -92,7 +90,7 @@ export function generateRoundRobinRound(
       sittingOut.push(shuffled[i])
     }
 
-    const round: Round = { id: generateId(), games, sittingOut }
+    const round: MatchupState = { games, sittingOut }
 
     if (repeats < bestRepeats) {
       bestRepeats = repeats
@@ -104,12 +102,12 @@ export function generateRoundRobinRound(
   return bestRound!
 }
 
-export function generateChallengeCourtRound(
+export function generateChallengeCourtMatchups(
   playerIds: string[],
   numCourts: number,
   stayingPlayerIds: string[] = [],
   deferredPlayerIds: string[] = [],
-): Round {
+): MatchupState {
   const deferredSet = new Set(deferredPlayerIds)
   const stayingSet = new Set(stayingPlayerIds)
   const deferred = playerIds.filter(id => deferredSet.has(id))
@@ -161,5 +159,5 @@ export function generateChallengeCourtRound(
   while (otherIdx < others.length) sittingOut.push(others[otherIdx++])
   while (stayIdx < staying.length) sittingOut.push(staying[stayIdx++])
 
-  return { id: generateId(), games, sittingOut }
+  return { games, sittingOut }
 }
