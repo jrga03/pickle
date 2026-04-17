@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import type { Session, Player, TimeSlot, PlaySystem } from '../types'
+import type { Session, Player, TimeSlot, PlaySystem, MatchupState, Round } from '../types'
 import { saveSession, loadSession } from '../utils/storage'
+import { addPlayerToMatchups, removePlayerFromMatchups } from '../utils/matchups'
 
 const generateId = () => crypto.randomUUID()
 
@@ -10,7 +11,8 @@ const defaultSession: Session = {
   defaultRate: 0,
   timeSlots: [],
   players: [],
-  rounds: [],
+  matchupState: null,
+  roundHistory: [],
   playSystem: 'paddle-queue',
   deferredPlayerIds: [],
 }
@@ -29,7 +31,8 @@ interface SessionContextType {
   updatePlayerStatus: (id: string, status: Player['status']) => void
   updatePlayerSchedule: (id: string, arrivalTime: string, departureTime: string) => void
   setDeferredPlayerIds: (ids: string[]) => void
-  setRounds: (rounds: Session['rounds']) => void
+  setMatchupState: (state: MatchupState | null) => void
+  setRoundHistory: (history: Round[]) => void
   resetSession: () => void
 }
 
@@ -73,9 +76,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     })), [])
 
   const addPlayer = useCallback((name: string) =>
-    setSession(s => ({
-      ...s,
-      players: [...s.players, {
+    setSession(s => {
+      const newPlayer = {
         id: generateId(),
         name,
         arrivalTime: s.timeSlots.length > 0
@@ -85,20 +87,45 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           ? s.timeSlots.reduce((max, ts) => ts.endTime > max ? ts.endTime : max, s.timeSlots[0].endTime)
           : '',
         status: 'active' as const,
-      }],
-    })), [])
+      }
+      return {
+        ...s,
+        players: [...s.players, newPlayer],
+        matchupState: s.matchupState
+          ? addPlayerToMatchups(s.matchupState, newPlayer.id)
+          : null,
+      }
+    }), [])
 
   const removePlayer = useCallback((id: string) =>
     setSession(s => ({
       ...s,
       players: s.players.filter(p => p.id !== id),
+      matchupState: s.matchupState
+        ? removePlayerFromMatchups(s.matchupState, id)
+        : null,
+      deferredPlayerIds: s.deferredPlayerIds.filter(d => d !== id),
     })), [])
 
   const updatePlayerStatus = useCallback((id: string, status: Player['status']) =>
-    setSession(s => ({
-      ...s,
-      players: s.players.map(p => p.id === id ? { ...p, status } : p),
-    })), [])
+    setSession(s => {
+      let newMatchupState = s.matchupState
+      if (newMatchupState) {
+        if (status === 'left') {
+          newMatchupState = removePlayerFromMatchups(newMatchupState, id)
+        } else if (status === 'active') {
+          newMatchupState = addPlayerToMatchups(newMatchupState, id)
+        }
+      }
+      return {
+        ...s,
+        players: s.players.map(p => p.id === id ? { ...p, status } : p),
+        matchupState: newMatchupState,
+        deferredPlayerIds: status === 'left'
+          ? s.deferredPlayerIds.filter(d => d !== id)
+          : s.deferredPlayerIds,
+      }
+    }), [])
 
   const updatePlayerSchedule = useCallback((id: string, arrivalTime: string, departureTime: string) =>
     setSession(s => ({
@@ -109,8 +136,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const setDeferredPlayerIds = useCallback((deferredPlayerIds: string[]) =>
     setSession(s => ({ ...s, deferredPlayerIds })), [])
 
-  const setRounds = useCallback((rounds: Session['rounds']) =>
-    setSession(s => ({ ...s, rounds })), [])
+  const setMatchupState = useCallback((matchupState: MatchupState | null) =>
+    setSession(s => ({ ...s, matchupState })), [])
+
+  const setRoundHistory = useCallback((roundHistory: Round[]) =>
+    setSession(s => ({ ...s, roundHistory })), [])
 
   const resetSession = useCallback(() =>
     setSession(defaultSession), [])
@@ -120,7 +150,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       session, setDate, setVenue, setDefaultRate, setPlaySystem,
       addTimeSlot, removeTimeSlot, updateTimeSlot,
       addPlayer, removePlayer, updatePlayerStatus, updatePlayerSchedule,
-      setDeferredPlayerIds, setRounds, resetSession,
+      setDeferredPlayerIds, setMatchupState, setRoundHistory, resetSession,
     }}>
       {children}
     </SessionContext.Provider>
