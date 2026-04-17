@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { useSession } from '../context/SessionContext'
-import type { PlaySystem, Round } from '../types'
-import { generatePaddleQueueRound, generateRoundRobinRound, generateChallengeCourtRound } from '../utils/matchups'
+import type { PlaySystem, MatchupState } from '../types'
+import {
+  generatePaddleQueueMatchups,
+  generateRoundRobinMatchups,
+  generateChallengeCourtMatchups,
+  snapshotToHistory,
+} from '../utils/matchups'
 
 const systemLabels: Record<PlaySystem, string> = {
   'paddle-queue': 'Paddle Queue',
@@ -10,7 +15,7 @@ const systemLabels: Record<PlaySystem, string> = {
 }
 
 export function MatchupsTab() {
-  const { session, setPlaySystem, setRounds, updatePlayerStatus, setDeferredPlayerIds } = useSession()
+  const { session, setPlaySystem, setMatchupState, setRoundHistory, updatePlayerStatus, setDeferredPlayerIds } = useSession()
   const [stayingIds, setStayingIds] = useState<Set<string>>(new Set())
   const [expandedRound, setExpandedRound] = useState<string | null>(null)
 
@@ -24,48 +29,55 @@ export function MatchupsTab() {
 
   const generateRound = () => {
     const playerIds = activePlayers.map(p => p.id)
-    let round: Round
+    let state: MatchupState
+
+    // Snapshot current state to history if matchups exist
+    if (session.matchupState) {
+      const snapshot = snapshotToHistory(session.matchupState)
+      setRoundHistory([...session.roundHistory, snapshot])
+    }
 
     switch (session.playSystem) {
       case 'paddle-queue':
-        round = generatePaddleQueueRound(playerIds, currentCourts, session.deferredPlayerIds)
+        state = generatePaddleQueueMatchups(playerIds, currentCourts, session.deferredPlayerIds)
         break
       case 'round-robin':
-        round = generateRoundRobinRound(playerIds, currentCourts, session.rounds, session.deferredPlayerIds)
+        state = generateRoundRobinMatchups(
+          playerIds,
+          currentCourts,
+          [...session.roundHistory, ...(session.matchupState ? [session.matchupState] : [])],
+          session.deferredPlayerIds,
+        )
         break
       case 'challenge-court':
-        round = generateChallengeCourtRound(playerIds, currentCourts, [...stayingIds], session.deferredPlayerIds)
+        state = generateChallengeCourtMatchups(playerIds, currentCourts, [...stayingIds], session.deferredPlayerIds)
         break
     }
 
-    setRounds([...session.rounds, round])
+    setMatchupState(state)
     setDeferredPlayerIds([])
     setStayingIds(new Set())
   }
 
-  const regenerateLastRound = () => {
-    if (session.rounds.length === 0) return
-    const prevRounds = session.rounds.slice(0, -1)
+  const reshuffleMatchups = () => {
+    if (!session.matchupState) return
     const playerIds = activePlayers.map(p => p.id)
-    let round: Round
+    let state: MatchupState
 
     switch (session.playSystem) {
       case 'paddle-queue':
-        round = generatePaddleQueueRound(playerIds, currentCourts, session.deferredPlayerIds)
+        state = generatePaddleQueueMatchups(playerIds, currentCourts, session.deferredPlayerIds)
         break
       case 'round-robin':
-        round = generateRoundRobinRound(playerIds, currentCourts, prevRounds, session.deferredPlayerIds)
+        state = generateRoundRobinMatchups(playerIds, currentCourts, session.roundHistory, session.deferredPlayerIds)
         break
       case 'challenge-court':
-        round = generateChallengeCourtRound(playerIds, currentCourts, [...stayingIds], session.deferredPlayerIds)
+        state = generateChallengeCourtMatchups(playerIds, currentCourts, [...stayingIds], session.deferredPlayerIds)
         break
     }
 
-    setRounds([...prevRounds, round])
+    setMatchupState(state)
   }
-
-  const currentRound = session.rounds.length > 0 ? session.rounds[session.rounds.length - 1] : null
-  const previousRounds = session.rounds.slice(0, -1)
 
   const toggleWinningTeam = (team: string[], opposingTeam: string[]) => {
     setStayingIds(prev => {
@@ -82,21 +94,19 @@ export function MatchupsTab() {
   }
 
   const deferPlayer = (playerId: string) => {
-    if (!currentRound) return
-    const sittingOut = [...currentRound.sittingOut]
+    if (!session.matchupState) return
+    const sittingOut = [...session.matchupState.sittingOut]
     if (sittingOut.length === 0) return
 
     const replacement = sittingOut.shift()!
-    const updatedGames = currentRound.games.map(game => ({
+    const updatedGames = session.matchupState.games.map(game => ({
       ...game,
       team1: game.team1.map(id => id === playerId ? replacement : id) as [string, string],
       team2: game.team2.map(id => id === playerId ? replacement : id) as [string, string],
     }))
 
     sittingOut.push(playerId)
-    const updatedRound = { ...currentRound, games: updatedGames, sittingOut }
-    const updatedRounds = [...session.rounds.slice(0, -1), updatedRound]
-    setRounds(updatedRounds)
+    setMatchupState({ games: updatedGames, sittingOut })
     setDeferredPlayerIds([...session.deferredPlayerIds, playerId])
   }
 
@@ -151,11 +161,11 @@ export function MatchupsTab() {
           disabled={activePlayers.length < 4}
           className="flex-1 rounded-lg bg-green-600 dark:bg-green-700 text-white py-2.5 text-sm font-medium disabled:opacity-50 min-h-[44px]"
         >
-          {session.rounds.length === 0 ? 'Generate Matchups' : 'Next Round'}
+          {!session.matchupState ? 'Generate Matchups' : 'Next Round'}
         </button>
-        {session.rounds.length > 0 && (
+        {session.matchupState && (
           <button
-            onClick={regenerateLastRound}
+            onClick={reshuffleMatchups}
             className="rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2.5 text-sm font-medium min-h-[44px]"
           >
             Reshuffle
@@ -163,13 +173,13 @@ export function MatchupsTab() {
         )}
       </div>
 
-      {currentRound && (
+      {session.matchupState && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Round {session.rounds.length}
+            Round {session.roundHistory.length + 1}
           </h3>
 
-          {currentRound.games.map(game => (
+          {session.matchupState.games.map(game => (
             <div key={game.court} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">Court {game.court}</p>
               <div className="flex items-center justify-between">
@@ -177,7 +187,7 @@ export function MatchupsTab() {
                   {game.team1.map(id => (
                     <div key={id} className="flex items-center justify-center gap-1">
                       <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
-                      {currentRound.sittingOut.length > 0 && (
+                      {session.matchupState!.sittingOut.length > 0 && (
                         <button
                           onClick={() => deferPlayer(id)}
                           className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
@@ -194,7 +204,7 @@ export function MatchupsTab() {
                   {game.team2.map(id => (
                     <div key={id} className="flex items-center justify-center gap-1">
                       <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
-                      {currentRound.sittingOut.length > 0 && (
+                      {session.matchupState!.sittingOut.length > 0 && (
                         <button
                           onClick={() => deferPlayer(id)}
                           className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
@@ -210,11 +220,11 @@ export function MatchupsTab() {
             </div>
           ))}
 
-          {currentRound.sittingOut.length > 0 && (
+          {session.matchupState.sittingOut.length > 0 && (
             <div className="bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">Sitting Out</p>
               <div className="flex flex-wrap gap-1">
-                {currentRound.sittingOut.map(id => (
+                {session.matchupState.sittingOut.map(id => (
                   <span
                     key={id}
                     className={`text-sm px-2 py-0.5 rounded ${
@@ -233,7 +243,7 @@ export function MatchupsTab() {
           {session.playSystem === 'challenge-court' && (
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-3 space-y-3">
               <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Winners stay on court?</p>
-              {currentRound.games.map(game => {
+              {session.matchupState.games.map(game => {
                 const team1Selected = game.team1.every(id => stayingIds.has(id))
                 const team2Selected = game.team2.every(id => stayingIds.has(id))
                 return (
@@ -270,12 +280,12 @@ export function MatchupsTab() {
         </div>
       )}
 
-      {previousRounds.length > 0 && (
+      {session.roundHistory.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Previous Rounds
           </h3>
-          {previousRounds.map((round, idx) => (
+          {session.roundHistory.map((round, idx) => (
             <div key={round.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
