@@ -6,6 +6,8 @@ import {
   rotateCourt,
   rotateChallengeCourtSingle,
   rerollCourt,
+  addPlayerToMatchups,
+  removePlayerFromMatchups,
 } from '../matchups'
 import type { MatchupState } from '../../types'
 
@@ -305,5 +307,151 @@ describe('rerollCourt', () => {
       [...result.games[0].team2].sort().join(','),
     ].sort().join('|')
     expect(validArrangements.has(teams)).toBe(true)
+  })
+})
+
+describe('addPlayerToMatchups', () => {
+  it('appends player to end of sitting out queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f'],
+    }
+    const result = addPlayerToMatchups(state, 'g')
+    expect(result.sittingOut).toEqual(['e', 'f', 'g'])
+  })
+
+  it('appends to empty queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    const result = addPlayerToMatchups(state, 'e')
+    expect(result.sittingOut).toEqual(['e'])
+  })
+
+  it('does not modify games', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    const result = addPlayerToMatchups(state, 'e')
+    expect(result.games).toEqual(state.games)
+  })
+
+  it('preserves queue order when adding multiple players sequentially', () => {
+    let state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    state = addPlayerToMatchups(state, 'e')
+    state = addPlayerToMatchups(state, 'f')
+    state = addPlayerToMatchups(state, 'g')
+    expect(state.sittingOut).toEqual(['e', 'f', 'g'])
+  })
+})
+
+describe('removePlayerFromMatchups', () => {
+  it('removes player from sitting out queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f', 'g'],
+    }
+    const result = removePlayerFromMatchups(state, 'f')
+    expect(result.sittingOut).toEqual(['e', 'g'])
+  })
+
+  it('removes from beginning of queue', () => {
+    const state: MatchupState = {
+      games: [],
+      sittingOut: ['e', 'f', 'g'],
+    }
+    const result = removePlayerFromMatchups(state, 'e')
+    expect(result.sittingOut).toEqual(['f', 'g'])
+  })
+
+  it('removes from end of queue', () => {
+    const state: MatchupState = {
+      games: [],
+      sittingOut: ['e', 'f', 'g'],
+    }
+    const result = removePlayerFromMatchups(state, 'g')
+    expect(result.sittingOut).toEqual(['e', 'f'])
+  })
+
+  it('replaces player on court team1 with first from queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f'],
+    }
+    const result = removePlayerFromMatchups(state, 'a')
+    expect(result.games[0].team1).toEqual(['e', 'b'])
+    expect(result.sittingOut).toEqual(['f'])
+  })
+
+  it('replaces player on court team2 with first from queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f'],
+    }
+    const result = removePlayerFromMatchups(state, 'd')
+    expect(result.games[0].team2).toEqual(['c', 'e'])
+    expect(result.sittingOut).toEqual(['f'])
+  })
+
+  it('dissolves game when no replacement available — remaining go to front of queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    const result = removePlayerFromMatchups(state, 'b')
+    expect(result.games).toHaveLength(0)
+    expect(result.sittingOut).toEqual(['a', 'c', 'd'])
+  })
+
+  it('dissolves game with no replacement — preserves existing queue after remaining players', () => {
+    const state: MatchupState = {
+      games: [
+        { court: 1, team1: ['a', 'b'], team2: ['c', 'd'] },
+        { court: 2, team1: ['e', 'f'], team2: ['g', 'h'] },
+      ],
+      sittingOut: [],
+    }
+    const result = removePlayerFromMatchups(state, 'a')
+    expect(result.games).toHaveLength(1)
+    expect(result.games[0].court).toBe(2)
+    expect(result.sittingOut).toEqual(['b', 'c', 'd'])
+  })
+
+  it('returns state unchanged for player not in matchups', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e'],
+    }
+    expect(removePlayerFromMatchups(state, 'z')).toEqual(state)
+  })
+
+  it('handles removing player from second court', () => {
+    const state: MatchupState = {
+      games: [
+        { court: 1, team1: ['a', 'b'], team2: ['c', 'd'] },
+        { court: 2, team1: ['e', 'f'], team2: ['g', 'h'] },
+      ],
+      sittingOut: ['i', 'j'],
+    }
+    const result = removePlayerFromMatchups(state, 'f')
+    expect(result.games.find(g => g.court === 2)!.team1).toEqual(['e', 'i'])
+  })
+
+  it('handles sequential removals correctly', () => {
+    let state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f', 'g'],
+    }
+    state = removePlayerFromMatchups(state, 'a')
+    expect(state.games[0].team1).toEqual(['e', 'b'])
+    expect(state.sittingOut).toEqual(['f', 'g'])
+    state = removePlayerFromMatchups(state, 'b')
+    expect(state.games[0].team1).toEqual(['e', 'f'])
+    expect(state.sittingOut).toEqual(['g'])
   })
 })

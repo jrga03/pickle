@@ -257,3 +257,56 @@ export function rerollCourt(
 
   return { games: newGames, sittingOut: state.sittingOut }
 }
+
+export function addPlayerToMatchups(
+  state: MatchupState,
+  playerId: string,
+): MatchupState {
+  return { games: state.games, sittingOut: [...state.sittingOut, playerId] }
+}
+
+export function removePlayerFromMatchups(
+  state: MatchupState,
+  playerId: string,
+): MatchupState {
+  // Check sitting out queue first
+  const queueIndex = state.sittingOut.indexOf(playerId)
+  if (queueIndex !== -1) {
+    const newQueue = [...state.sittingOut]
+    newQueue.splice(queueIndex, 1)
+    return { games: state.games, sittingOut: newQueue }
+  }
+
+  // Check games
+  for (let i = 0; i < state.games.length; i++) {
+    const game = state.games[i]
+    const inTeam1 = game.team1.indexOf(playerId)
+    const inTeam2 = game.team2.indexOf(playerId)
+
+    if (inTeam1 === -1 && inTeam2 === -1) continue
+
+    const newQueue = [...state.sittingOut]
+    const replacement = newQueue.length > 0 ? newQueue.shift()! : null
+
+    if (replacement) {
+      const newGames = [...state.games]
+      if (inTeam1 !== -1) {
+        const newTeam1 = [...game.team1] as [string, string]
+        newTeam1[inTeam1] = replacement
+        newGames[i] = { ...game, team1: newTeam1 }
+      } else {
+        const newTeam2 = [...game.team2] as [string, string]
+        newTeam2[inTeam2] = replacement
+        newGames[i] = { ...game, team2: newTeam2 }
+      }
+      return { games: newGames, sittingOut: newQueue }
+    } else {
+      // No replacement — dissolve game, remaining go to front of queue
+      const remaining = [...game.team1, ...game.team2].filter(id => id !== playerId)
+      const newGames = state.games.filter((_, idx) => idx !== i)
+      return { games: newGames, sittingOut: [...remaining, ...state.sittingOut] }
+    }
+  }
+
+  return state
+}
