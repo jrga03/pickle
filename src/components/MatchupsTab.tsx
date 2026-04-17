@@ -17,6 +17,12 @@ const systemLabels: Record<PlaySystem, string> = {
   'round-robin': 'Round Robin',
 }
 
+const systemTaglines: Record<PlaySystem, string> = {
+  'paddle-queue': 'Next in line plays next',
+  'challenge-court': 'Winners stay, losers rotate',
+  'round-robin': 'Everyone plays with everyone',
+}
+
 export function MatchupsTab() {
   const { session, setPlaySystem, setMatchupState, setRoundHistory, updatePlayerStatus, setDeferredPlayerIds } = useSession()
   const [stayingIds, setStayingIds] = useState<Set<string>>(new Set())
@@ -213,6 +219,10 @@ export function MatchupsTab() {
           </button>
         ))}
       </div>
+
+      <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+        {systemTaglines[session.playSystem]}
+      </p>
 
       {session.players.length > 0 && (
         <div className="space-y-2">
