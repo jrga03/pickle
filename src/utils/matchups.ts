@@ -161,3 +161,60 @@ export function generateChallengeCourtMatchups(
 
   return { games, sittingOut }
 }
+
+export function rotateCourt(
+  state: MatchupState,
+  courtNumber: number,
+): MatchupState {
+  const gameIndex = state.games.findIndex(g => g.court === courtNumber)
+  if (gameIndex === -1) return state
+
+  const game = state.games[gameIndex]
+  const courtPlayers = [...game.team1, ...game.team2]
+
+  // Court players go to back of queue, then pull next 4 from front
+  const newQueue = [...state.sittingOut, ...courtPlayers]
+  const incoming = newQueue.splice(0, 4)
+
+  const newGames = [...state.games]
+  if (incoming.length >= 4) {
+    newGames[gameIndex] = {
+      court: courtNumber,
+      team1: [incoming[0], incoming[1]],
+      team2: [incoming[2], incoming[3]],
+    }
+  } else {
+    // Fewer than 4 total — can't form a game
+    newGames.splice(gameIndex, 1)
+    newQueue.unshift(...incoming)
+  }
+
+  return { games: newGames, sittingOut: newQueue }
+}
+
+export function rotateChallengeCourtSingle(
+  state: MatchupState,
+  courtNumber: number,
+  winningTeam: 'team1' | 'team2',
+): MatchupState {
+  const gameIndex = state.games.findIndex(g => g.court === courtNumber)
+  if (gameIndex === -1) return state
+
+  const game = state.games[gameIndex]
+  const winners = [...game[winningTeam]]
+  const losingTeam = winningTeam === 'team1' ? 'team2' : 'team1'
+  const losers = [...game[losingTeam]]
+
+  // Losers go to back of queue, then pull 2 challengers from front
+  const newQueue = [...state.sittingOut, ...losers]
+  const challengers = newQueue.splice(0, 2)
+
+  const newGames = [...state.games]
+  newGames[gameIndex] = {
+    court: courtNumber,
+    team1: [winners[0], winners[1]],
+    team2: [challengers[0], challengers[1]],
+  }
+
+  return { games: newGames, sittingOut: newQueue }
+}

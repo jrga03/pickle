@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { generatePaddleQueueMatchups, generateRoundRobinMatchups, generateChallengeCourtMatchups } from '../matchups'
+import {
+  generatePaddleQueueMatchups,
+  generateRoundRobinMatchups,
+  generateChallengeCourtMatchups,
+  rotateCourt,
+  rotateChallengeCourtSingle,
+} from '../matchups'
+import type { MatchupState } from '../../types'
 
 describe('generatePaddleQueueMatchups', () => {
   it('assigns 4 players to 1 court', () => {
@@ -89,5 +96,145 @@ describe('deferred player priority', () => {
     const playing = [...round.games[0].team1, ...round.games[0].team2]
     expect(playing).toContain('p5')
     expect(playing).toContain('p6')
+  })
+})
+
+describe('rotateCourt', () => {
+  it('rotates court players to back of queue and fills from front', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f', 'g', 'h'],
+    }
+    const result = rotateCourt(state, 1)
+    expect(result.games[0].team1).toEqual(['e', 'f'])
+    expect(result.games[0].team2).toEqual(['g', 'h'])
+    expect(result.sittingOut).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('preserves queue order — court players go to back', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f', 'g', 'h', 'i', 'j'],
+    }
+    const result = rotateCourt(state, 1)
+    expect(result.sittingOut).toEqual(['i', 'j', 'a', 'b', 'c', 'd'])
+  })
+
+  it('works with exactly 4 players and empty queue', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    const result = rotateCourt(state, 1)
+    const allPlayers = [...result.games[0].team1, ...result.games[0].team2]
+    expect(allPlayers.sort()).toEqual(['a', 'b', 'c', 'd'])
+    expect(result.sittingOut).toEqual([])
+  })
+
+  it('only rotates the specified court, leaving others untouched', () => {
+    const state: MatchupState = {
+      games: [
+        { court: 1, team1: ['a', 'b'], team2: ['c', 'd'] },
+        { court: 2, team1: ['e', 'f'], team2: ['g', 'h'] },
+      ],
+      sittingOut: ['i', 'j', 'k', 'l'],
+    }
+    const result = rotateCourt(state, 1)
+    expect(result.games.find(g => g.court === 2)).toEqual({
+      court: 2, team1: ['e', 'f'], team2: ['g', 'h'],
+    })
+    expect(result.games.find(g => g.court === 1)!.team1).toEqual(['i', 'j'])
+    expect(result.games.find(g => g.court === 1)!.team2).toEqual(['k', 'l'])
+    expect(result.sittingOut).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('returns state unchanged for nonexistent court', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f'],
+    }
+    expect(rotateCourt(state, 99)).toEqual(state)
+  })
+
+  it('handles queue with fewer than 4 — dissolves game, all players go to queue', () => {
+    const state: MatchupState = {
+      games: [
+        { court: 1, team1: ['a', 'b'], team2: ['c', 'd'] },
+        { court: 2, team1: ['e', 'f'], team2: ['g', 'h'] },
+      ],
+      sittingOut: ['i', 'j'],
+    }
+    const result = rotateCourt(state, 1)
+    expect(result.games.find(g => g.court === 1)!.team1).toEqual(['i', 'j'])
+    expect(result.games.find(g => g.court === 1)!.team2).toEqual(['a', 'b'])
+    expect(result.sittingOut).toEqual(['c', 'd'])
+  })
+})
+
+describe('rotateChallengeCourtSingle', () => {
+  it('winners stay, losers go to queue, 2 new from front', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f', 'g', 'h'],
+    }
+    const result = rotateChallengeCourtSingle(state, 1, 'team1')
+    expect(result.games[0].team1).toEqual(['a', 'b'])
+    expect(result.games[0].team2).toEqual(['e', 'f'])
+    expect(result.sittingOut).toEqual(['g', 'h', 'c', 'd'])
+  })
+
+  it('team2 wins — team2 stays as team1, new challengers as team2', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e', 'f', 'g'],
+    }
+    const result = rotateChallengeCourtSingle(state, 1, 'team2')
+    expect(result.games[0].team1).toEqual(['c', 'd'])
+    expect(result.games[0].team2).toEqual(['e', 'f'])
+    expect(result.sittingOut).toEqual(['g', 'a', 'b'])
+  })
+
+  it('with empty queue — losers go to queue then come right back', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    const result = rotateChallengeCourtSingle(state, 1, 'team1')
+    expect(result.games[0].team1).toEqual(['a', 'b'])
+    expect(result.games[0].team2).toEqual(['c', 'd'])
+    expect(result.sittingOut).toEqual([])
+  })
+
+  it('with only 1 in queue — losers go to queue, 2 pulled back', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: ['e'],
+    }
+    const result = rotateChallengeCourtSingle(state, 1, 'team1')
+    expect(result.games[0].team1).toEqual(['a', 'b'])
+    expect(result.games[0].team2).toEqual(['e', 'c'])
+    expect(result.sittingOut).toEqual(['d'])
+  })
+
+  it('only rotates specified court', () => {
+    const state: MatchupState = {
+      games: [
+        { court: 1, team1: ['a', 'b'], team2: ['c', 'd'] },
+        { court: 2, team1: ['e', 'f'], team2: ['g', 'h'] },
+      ],
+      sittingOut: ['i', 'j'],
+    }
+    const result = rotateChallengeCourtSingle(state, 1, 'team1')
+    expect(result.games.find(g => g.court === 2)).toEqual({
+      court: 2, team1: ['e', 'f'], team2: ['g', 'h'],
+    })
+  })
+
+  it('returns state unchanged for nonexistent court', () => {
+    const state: MatchupState = {
+      games: [{ court: 1, team1: ['a', 'b'], team2: ['c', 'd'] }],
+      sittingOut: [],
+    }
+    expect(rotateChallengeCourtSingle(state, 99, 'team1')).toEqual(state)
   })
 })
