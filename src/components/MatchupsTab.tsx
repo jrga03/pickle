@@ -6,6 +6,9 @@ import {
   generateRoundRobinMatchups,
   generateChallengeCourtMatchups,
   snapshotToHistory,
+  rotateCourt,
+  rotateChallengeCourtSingle,
+  rerollCourt,
 } from '../utils/matchups'
 
 const systemLabels: Record<PlaySystem, string> = {
@@ -108,6 +111,31 @@ export function MatchupsTab() {
     sittingOut.push(playerId)
     setMatchupState({ games: updatedGames, sittingOut })
     setDeferredPlayerIds([...session.deferredPlayerIds, playerId])
+  }
+
+  const rotateSingleCourt = (courtNumber: number) => {
+    if (!session.matchupState) return
+    if (session.playSystem === 'round-robin') return
+
+    let newState: MatchupState
+    if (session.playSystem === 'challenge-court') {
+      const game = session.matchupState.games.find(g => g.court === courtNumber)
+      if (!game) return
+      const team1Staying = game.team1.every(id => stayingIds.has(id))
+      const winningTeam = team1Staying ? 'team1' : 'team2'
+      newState = rotateChallengeCourtSingle(session.matchupState, courtNumber, winningTeam)
+    } else {
+      newState = rotateCourt(session.matchupState, courtNumber)
+    }
+
+    setMatchupState(newState)
+    setStayingIds(new Set())
+    setDeferredPlayerIds([])
+  }
+
+  const rerollSingleCourt = (courtNumber: number) => {
+    if (!session.matchupState) return
+    setMatchupState(rerollCourt(session.matchupState, courtNumber))
   }
 
   return (
@@ -217,6 +245,22 @@ export function MatchupsTab() {
                   ))}
                 </div>
               </div>
+              {session.playSystem !== 'round-robin' && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    onClick={() => rotateSingleCourt(game.court)}
+                    className="flex-1 rounded-md bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 py-1.5 text-xs font-medium min-h-[32px]"
+                  >
+                    Next
+                  </button>
+                  <button
+                    onClick={() => rerollSingleCourt(game.court)}
+                    className="rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-3 py-1.5 text-xs font-medium min-h-[32px]"
+                  >
+                    Re-roll
+                  </button>
+                </div>
+              )}
             </div>
           ))}
 
