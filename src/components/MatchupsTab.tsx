@@ -21,6 +21,9 @@ export function MatchupsTab() {
   const { session, setPlaySystem, setMatchupState, setRoundHistory, updatePlayerStatus, setDeferredPlayerIds } = useSession()
   const [stayingIds, setStayingIds] = useState<Set<string>>(new Set())
   const [expandedRound, setExpandedRound] = useState<string | null>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editDraft, setEditDraft] = useState<MatchupState | null>(null)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
 
   const activePlayers = session.players.filter(p => p.status === 'active')
   const currentCourts = session.timeSlots.length > 0
@@ -138,6 +141,61 @@ export function MatchupsTab() {
     setMatchupState(rerollCourt(session.matchupState, courtNumber))
   }
 
+  const enterEditMode = () => {
+    if (!session.matchupState) return
+    setEditDraft({
+      games: session.matchupState.games.map(g => ({ ...g, team1: [...g.team1], team2: [...g.team2] })),
+      sittingOut: [...session.matchupState.sittingOut],
+    })
+    setEditMode(true)
+    setSelectedPlayerId(null)
+  }
+
+  const cancelEditMode = () => {
+    setEditMode(false)
+    setEditDraft(null)
+    setSelectedPlayerId(null)
+  }
+
+  const saveEditMode = () => {
+    if (!editDraft) return
+    setMatchupState(editDraft)
+    setRoundHistory([])
+    setDeferredPlayerIds([])
+    setEditMode(false)
+    setEditDraft(null)
+    setSelectedPlayerId(null)
+  }
+
+  const handleEditTap = (playerId: string) => {
+    if (!editDraft) return
+
+    if (!selectedPlayerId) {
+      setSelectedPlayerId(playerId)
+      return
+    }
+
+    if (selectedPlayerId === playerId) {
+      setSelectedPlayerId(null)
+      return
+    }
+
+    // Swap the two players in the draft
+    const swap = (id: string) => (id === selectedPlayerId ? playerId : id === playerId ? selectedPlayerId : id)
+
+    setEditDraft({
+      games: editDraft.games.map(game => ({
+        ...game,
+        team1: game.team1.map(swap) as [string, string],
+        team2: game.team2.map(swap) as [string, string],
+      })),
+      sittingOut: editDraft.sittingOut.map(swap),
+    })
+    setSelectedPlayerId(null)
+  }
+
+  const displayState = editMode && editDraft ? editDraft : session.matchupState
+
   return (
     <div className="space-y-4">
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
@@ -183,46 +241,92 @@ export function MatchupsTab() {
         </p>
       )}
 
-      <div className="flex gap-2">
-        <button
-          onClick={generateRound}
-          disabled={activePlayers.length < 4}
-          className="flex-1 rounded-lg bg-green-600 dark:bg-green-700 text-white py-2.5 text-sm font-medium disabled:opacity-50 min-h-[44px]"
-        >
-          {!session.matchupState ? 'Generate Matchups' : 'Next Round'}
-        </button>
-        {session.matchupState && (
+      {!editMode && (
+        <div className="flex gap-2">
           <button
-            onClick={reshuffleMatchups}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2.5 text-sm font-medium min-h-[44px]"
+            onClick={generateRound}
+            disabled={activePlayers.length < 4}
+            className="flex-1 rounded-lg bg-green-600 dark:bg-green-700 text-white py-2.5 text-sm font-medium disabled:opacity-50 min-h-[44px]"
           >
-            Reshuffle
+            {!session.matchupState ? 'Generate Matchups' : 'Next Round'}
           </button>
-        )}
-      </div>
+          {session.matchupState && (
+            <button
+              onClick={reshuffleMatchups}
+              className="rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2.5 text-sm font-medium min-h-[44px]"
+            >
+              Reshuffle
+            </button>
+          )}
+        </div>
+      )}
 
-      {session.matchupState && (
+      {displayState && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Round {session.roundHistory.length + 1}
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Round {session.roundHistory.length + 1}
+            </h3>
+            {!editMode ? (
+              <button
+                onClick={enterEditMode}
+                className="text-xs text-blue-600 dark:text-blue-400 font-medium px-2 py-1 min-h-[28px]"
+              >
+                Edit
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={cancelEditMode}
+                  className="text-xs text-gray-500 dark:text-gray-400 font-medium px-2 py-1 min-h-[28px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEditMode}
+                  className="text-xs text-blue-600 dark:text-blue-400 font-medium px-2 py-1 min-h-[28px]"
+                >
+                  Save
+                </button>
+              </div>
+            )}
+          </div>
 
-          {session.matchupState.games.map(game => (
-            <div key={game.court} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          {displayState.games.map(game => (
+            <div key={game.court} className={`bg-white dark:bg-gray-900 rounded-lg border p-4 ${
+              editMode
+                ? 'border-dashed border-blue-400 dark:border-blue-500'
+                : 'border-gray-200 dark:border-gray-700'
+            }`}>
               <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">Court {game.court}</p>
               <div className="flex items-center justify-between">
                 <div className="text-center flex-1 space-y-1">
                   {game.team1.map(id => (
                     <div key={id} className="flex items-center justify-center gap-1">
-                      <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
-                      {session.matchupState!.sittingOut.length > 0 && (
+                      {editMode ? (
                         <button
-                          onClick={() => deferPlayer(id)}
-                          className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
-                          title="Defer to next round"
+                          onClick={() => handleEditTap(id)}
+                          className={`font-medium px-2 py-0.5 rounded ${
+                            selectedPlayerId === id
+                              ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 ring-2 ring-blue-400'
+                              : 'text-gray-900 dark:text-gray-50'
+                          }`}
                         >
-                          defer
+                          {getName(id)}
                         </button>
+                      ) : (
+                        <>
+                          <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
+                          {session.matchupState!.sittingOut.length > 0 && (
+                            <button
+                              onClick={() => deferPlayer(id)}
+                              className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
+                              title="Defer to next round"
+                            >
+                              defer
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
@@ -231,21 +335,36 @@ export function MatchupsTab() {
                 <div className="text-center flex-1 space-y-1">
                   {game.team2.map(id => (
                     <div key={id} className="flex items-center justify-center gap-1">
-                      <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
-                      {session.matchupState!.sittingOut.length > 0 && (
+                      {editMode ? (
                         <button
-                          onClick={() => deferPlayer(id)}
-                          className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
-                          title="Defer to next round"
+                          onClick={() => handleEditTap(id)}
+                          className={`font-medium px-2 py-0.5 rounded ${
+                            selectedPlayerId === id
+                              ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 ring-2 ring-blue-400'
+                              : 'text-gray-900 dark:text-gray-50'
+                          }`}
                         >
-                          defer
+                          {getName(id)}
                         </button>
+                      ) : (
+                        <>
+                          <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
+                          {session.matchupState!.sittingOut.length > 0 && (
+                            <button
+                              onClick={() => deferPlayer(id)}
+                              className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
+                              title="Defer to next round"
+                            >
+                              defer
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
-              {session.playSystem !== 'round-robin' && (
+              {!editMode && session.playSystem !== 'round-robin' && (
                 <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                   <button
                     onClick={() => rotateSingleCourt(game.court)}
@@ -264,30 +383,44 @@ export function MatchupsTab() {
             </div>
           ))}
 
-          {session.matchupState.sittingOut.length > 0 && (
+          {displayState.sittingOut.length > 0 && (
             <div className="bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">Sitting Out</p>
               <div className="flex flex-wrap gap-1">
-                {session.matchupState.sittingOut.map(id => (
-                  <span
-                    key={id}
-                    className={`text-sm px-2 py-0.5 rounded ${
-                      session.deferredPlayerIds.includes(id)
-                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
-                        : 'text-gray-700 dark:text-gray-200'
-                    }`}
-                  >
-                    {getName(id)}{session.deferredPlayerIds.includes(id) ? ' (next round)' : ''}
-                  </span>
+                {displayState.sittingOut.map(id => (
+                  editMode ? (
+                    <button
+                      key={id}
+                      onClick={() => handleEditTap(id)}
+                      className={`text-sm px-2 py-0.5 rounded ${
+                        selectedPlayerId === id
+                          ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 ring-2 ring-blue-400'
+                          : 'text-gray-700 dark:text-gray-200'
+                      }`}
+                    >
+                      {getName(id)}
+                    </button>
+                  ) : (
+                    <span
+                      key={id}
+                      className={`text-sm px-2 py-0.5 rounded ${
+                        session.deferredPlayerIds.includes(id)
+                          ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
+                          : 'text-gray-700 dark:text-gray-200'
+                      }`}
+                    >
+                      {getName(id)}{session.deferredPlayerIds.includes(id) ? ' (next round)' : ''}
+                    </span>
+                  )
                 ))}
               </div>
             </div>
           )}
 
-          {session.playSystem === 'challenge-court' && (
+          {!editMode && session.playSystem === 'challenge-court' && (
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-3 space-y-3">
               <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Winners stay on court?</p>
-              {session.matchupState.games.map(game => {
+              {session.matchupState!.games.map(game => {
                 const team1Selected = game.team1.every(id => stayingIds.has(id))
                 const team2Selected = game.team2.every(id => stayingIds.has(id))
                 return (
