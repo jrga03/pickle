@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   createNewSession, checkInPlayer, checkOutPlayer, addRosterPlayer,
   removeRosterPlayer, updateSessionFields, setGameWinner, compareSessionsDesc,
+  localToday,
 } from '../sessionOps'
 import type { Session } from '../../types'
 
@@ -117,5 +118,13 @@ describe('compareSessionsDesc', () => {
     const c = { ...base(), date: '2026-07-18', createdAt: '2026-07-18T12:00:00Z' }
     expect([a, b, c].sort(compareSessionsDesc).map(s => s.createdAt))
       .toEqual(['2026-07-18T12:00:00Z', '2026-07-18T10:00:00Z', '2026-07-17T10:00:00Z'])
+  })
+})
+
+describe('localToday', () => {
+  it('returns the local date in YYYY-MM-DD', () => {
+    const now = new Date()
+    const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    expect(localToday()).toBe(expected)
   })
 })

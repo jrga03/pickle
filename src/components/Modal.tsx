@@ -8,7 +8,7 @@ interface ModalProps {
 
 export function Modal({ title, onClose, children }: ModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center" role="dialog" aria-modal="true">
       <button type="button" className="absolute inset-0 bg-black/50" onClick={onClose} aria-label="Close" />
       <div
         className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-t-2xl max-h-[90dvh] overflow-y-auto p-4 space-y-4"

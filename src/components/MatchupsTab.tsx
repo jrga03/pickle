@@ -166,7 +166,6 @@ export function MatchupsTab() {
   const saveEditMode = () => {
     if (!editDraft) return
     setMatchupState(editDraft)
-    setRoundHistory([])
     setDeferredPlayerIds([])
     setEditMode(false)
     setEditDraft(null)
@@ -208,6 +207,7 @@ export function MatchupsTab() {
         {(Object.entries(systemLabels) as [PlaySystem, string][]).map(([key, label]) => (
           <button
             key={key}
+            disabled={readOnly}
             onClick={() => setPlaySystem(key)}
             className={`flex-1 rounded-md py-2 text-xs font-medium min-h-[40px] ${
               session.playSystem === key

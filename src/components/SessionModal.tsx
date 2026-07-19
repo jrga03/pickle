@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { PlaySystem, SavedPlayer, SavedVenue, Session } from '../types'
 import { useSessions } from '../context/SessionsContext'
-import { addRosterPlayer, removeRosterPlayer, updateSessionFields } from '../utils/sessionOps'
+import { addRosterPlayer, removeRosterPlayer, updateSessionFields, localToday } from '../utils/sessionOps'
 import { loadVenues, saveVenues, loadPlayers, savePlayers } from '../utils/storage'
 import { Autocomplete } from './Autocomplete'
 import { Modal } from './Modal'
@@ -27,7 +27,7 @@ export function SessionModal({ sessionId, onClose, onCreated }: SessionModalProp
   const { sessions, createSession, updateSession } = useSessions()
   const existing = sessionId ? sessions.find(s => s.id === sessionId) : undefined
 
-  const [date, setDate] = useState(existing?.date ?? new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(existing?.date ?? localToday())
   const [venue, setVenue] = useState(existing?.venue ?? '')
   const [courts, setCourts] = useState(String(existing?.numCourts ?? 1))
   const [amount, setAmount] = useState(existing?.courtAmount != null ? String(existing.courtAmount) : '')

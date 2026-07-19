@@ -119,3 +119,7 @@ export function compareSessionsDesc(a: Session, b: Session): number {
   if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1
   return 0
 }
+
+export function localToday(): string {
+  return new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+}

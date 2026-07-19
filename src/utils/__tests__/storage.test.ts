@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { saveSessions, loadSessions, saveVenues, loadVenues, savePlayers, loadPlayers } from '../storage'
-import { createNewSession } from '../sessionOps'
+import { createNewSession, localToday } from '../sessionOps'
 
 const SESSIONS_KEY = 'pickleball-sessions'
 const LEGACY_KEY = 'pickleball-session'
@@ -25,6 +25,11 @@ describe('sessions storage', () => {
 
   it('returns [] on corrupt sessions data', () => {
     localStorage.setItem(SESSIONS_KEY, '{nope')
+    expect(loadSessions()).toEqual([])
+  })
+
+  it('returns [] when sessions data is valid JSON but not an array', () => {
+    localStorage.setItem(SESSIONS_KEY, '"nope"')
     expect(loadSessions()).toEqual([])
   })
 })
@@ -72,7 +77,7 @@ describe('legacy migration', () => {
   })
 
   it('marks a legacy session dated today as active', () => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = localToday()
     localStorage.setItem(LEGACY_KEY, JSON.stringify({ ...legacy, date: today }))
     expect(loadSessions()[0].status).toBe('active')
   })

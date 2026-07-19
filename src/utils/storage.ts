@@ -1,4 +1,5 @@
 import type { Session, SavedVenue, SavedPlayer, MatchupState, Game, Round } from '../types'
+import { localToday } from './sessionOps'
 
 const SESSIONS_KEY = 'pickleball-sessions'
 const LEGACY_SESSION_KEY = 'pickleball-session'
@@ -13,7 +14,8 @@ export function loadSessions(): Session[] {
   const data = localStorage.getItem(SESSIONS_KEY)
   if (data) {
     try {
-      return JSON.parse(data) as Session[]
+      const parsed = JSON.parse(data) as unknown
+      return Array.isArray(parsed) ? (parsed as Session[]) : []
     } catch {
       return []
     }
@@ -110,7 +112,7 @@ function migrateLegacySession(): Session | null {
       return sum + len * s.numCourts * (s.rateOverride ?? raw.defaultRate)
     }, 0)
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = localToday()
     const validSystems: Session['playSystem'][] = ['paddle-queue', 'challenge-court', 'round-robin']
 
     return {

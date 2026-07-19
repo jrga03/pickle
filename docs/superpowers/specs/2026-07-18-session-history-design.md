@@ -21,6 +21,7 @@ Alongside the structural change, the expense model simplifies from per-hour pres
 - **Play system in both places** — modal sets the initial system; the Matchups tab selector remains for mid-session switches.
 - **`participated` is sticky** — check in then out → still owes a share (they played).
 - **Migrated legacy session is `ended` unless dated today.**
+- **Per-court "Next" games are unrecorded (2026-07-19 final review)** — rotateSingleCourt advances a court without snapshotting the finished game to roundHistory, so those games never appear in Matches/W-L. Deferred; revisit with numbering-aware single-game snapshots when W/L accuracy matters.
 
 ## Data Model
 
