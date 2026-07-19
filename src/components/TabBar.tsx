@@ -1,14 +1,15 @@
-const tabs = ['Setup', 'Players', 'Matchups', 'Expenses'] as const
-export type Tab = (typeof tabs)[number]
-
-interface TabBarProps {
-  activeTab: Tab
-  onTabChange: (tab: Tab) => void
+interface TabBarProps<T extends string> {
+  tabs: readonly T[]
+  activeTab: T
+  onTabChange: (tab: T) => void
 }
 
-export function TabBar({ activeTab, onTabChange }: TabBarProps) {
+export function TabBar<T extends string>({ tabs, activeTab, onTabChange }: TabBarProps<T>) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <nav
+      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex z-50"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
       {tabs.map(tab => (
         <button
           key={tab}
