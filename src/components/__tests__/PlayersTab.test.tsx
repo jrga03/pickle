@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { SessionsProvider } from '../../context/SessionsContext'
 import { SessionProvider } from '../../context/SessionContext'
 import { PlayersTab } from '../PlayersTab'
-import { createNewSession } from '../../utils/sessionOps'
+import { createNewSession, checkInPlayer, checkOutPlayer } from '../../utils/sessionOps'
 import { saveSessions } from '../../utils/storage'
 import type { Session } from '../../types'
 
@@ -40,5 +40,22 @@ describe('PlayersTab', () => {
   it('hides toggles when the session is ended', () => {
     renderTab({ ...sample(), status: 'ended' })
     expect(screen.queryByText('Check in')).toBeNull()
+  })
+
+  it('shows "played earlier" for participated players who checked out', () => {
+    let s = sample()
+    s = checkInPlayer(s, s.players[0].id)
+    s = checkOutPlayer(s, s.players[0].id)
+    renderTab(s)
+    expect(screen.getByText('played earlier')).toBeInTheDocument()
+  })
+
+  it('shows the empty-roster message when there are no players', () => {
+    const s = createNewSession({
+      date: '2026-07-18', venue: '', numCourts: 1,
+      courtAmount: null, playSystem: 'paddle-queue', playerNames: [],
+    })
+    renderTab(s)
+    expect(screen.getByText(/No players in the roster yet/)).toBeInTheDocument()
   })
 })
