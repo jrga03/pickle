@@ -311,10 +311,36 @@ export function removePlayerFromMatchups(
   return state
 }
 
-export function snapshotToHistory(state: MatchupState): Round {
+export function snapshotToHistory(state: MatchupState, winnerIds?: ReadonlySet<string>): Round {
   return {
     id: crypto.randomUUID(),
-    games: state.games,
+    games: state.games.map(game => {
+      if (!winnerIds) return game
+      if (game.team1.every(id => winnerIds.has(id))) return { ...game, winner: 1 as const }
+      if (game.team2.every(id => winnerIds.has(id))) return { ...game, winner: 2 as const }
+      return game
+    }),
     sittingOut: state.sittingOut,
   }
+}
+
+export function computeWinLoss(rounds: Round[]): { playerId: string; wins: number; losses: number }[] {
+  const stats = new Map<string, { wins: number; losses: number }>()
+  const bump = (id: string, key: 'wins' | 'losses') => {
+    const s = stats.get(id) ?? { wins: 0, losses: 0 }
+    s[key]++
+    stats.set(id, s)
+  }
+  for (const round of rounds) {
+    for (const game of round.games) {
+      if (!game.winner) continue
+      const winners = game.winner === 1 ? game.team1 : game.team2
+      const losers = game.winner === 1 ? game.team2 : game.team1
+      winners.forEach(id => bump(id, 'wins'))
+      losers.forEach(id => bump(id, 'losses'))
+    }
+  }
+  return [...stats.entries()]
+    .map(([playerId, s]) => ({ playerId, ...s }))
+    .sort((a, b) => b.wins - a.wins || a.losses - b.losses)
 }

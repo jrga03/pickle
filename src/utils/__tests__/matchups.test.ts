@@ -9,6 +9,7 @@ import {
   addPlayerToMatchups,
   removePlayerFromMatchups,
   snapshotToHistory,
+  computeWinLoss,
 } from '../matchups'
 import type { MatchupState } from '../../types'
 
@@ -476,5 +477,47 @@ describe('snapshotToHistory', () => {
     const round1 = snapshotToHistory(state)
     const round2 = snapshotToHistory(state)
     expect(round1.id).not.toEqual(round2.id)
+  })
+})
+
+describe('snapshotToHistory winner stamping', () => {
+  const state = {
+    games: [
+      { court: 1, team1: ['a', 'b'] as [string, string], team2: ['c', 'd'] as [string, string] },
+      { court: 2, team1: ['e', 'f'] as [string, string], team2: ['g', 'h'] as [string, string] },
+    ],
+    sittingOut: ['i'],
+  }
+
+  it('stamps winner 1 or 2 when a full team is in winnerIds', () => {
+    const round = snapshotToHistory(state, new Set(['a', 'b', 'g', 'h']))
+    expect(round.games[0].winner).toBe(1)
+    expect(round.games[1].winner).toBe(2)
+  })
+
+  it('leaves winner unset without winnerIds or with partial teams', () => {
+    expect(snapshotToHistory(state).games[0].winner).toBeUndefined()
+    expect(snapshotToHistory(state, new Set(['a'])).games[0].winner).toBeUndefined()
+  })
+})
+
+describe('computeWinLoss', () => {
+  it('tallies wins and losses from games with winners only', () => {
+    const rounds = [
+      { id: 'r1', games: [
+        { court: 1, team1: ['a', 'b'] as [string, string], team2: ['c', 'd'] as [string, string], winner: 1 as const },
+        { court: 2, team1: ['e', 'f'] as [string, string], team2: ['g', 'h'] as [string, string] },
+      ], sittingOut: [] },
+      { id: 'r2', games: [
+        { court: 1, team1: ['a', 'c'] as [string, string], team2: ['b', 'd'] as [string, string], winner: 2 as const },
+      ], sittingOut: [] },
+    ]
+    const tally = computeWinLoss(rounds)
+    const get = (id: string) => tally.find(t => t.playerId === id)
+    expect(get('a')).toEqual({ playerId: 'a', wins: 1, losses: 1 })
+    expect(get('b')).toEqual({ playerId: 'b', wins: 2, losses: 0 })
+    expect(get('c')).toEqual({ playerId: 'c', wins: 0, losses: 2 })
+    expect(get('e')).toBeUndefined() // no recorded result
+    expect(tally[0].playerId).toBe('b') // sorted by wins desc
   })
 })
