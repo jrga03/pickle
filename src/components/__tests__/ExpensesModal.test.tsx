@@ -59,4 +59,11 @@ describe('ExpensesModal', () => {
     renderModal(s)
     expect(screen.getByText(/No one has checked in yet/)).toBeInTheDocument()
   })
+
+  it('treats a zero amount as unset and keeps prompting for the split', async () => {
+    const user = userEvent.setup()
+    renderModal(sessionWithPlayers(null))
+    await user.type(screen.getByLabelText('Court Amount'), '0')
+    expect(screen.getByText(/Enter the court amount/)).toBeInTheDocument()
+  })
 })

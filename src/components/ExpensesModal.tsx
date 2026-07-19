@@ -39,6 +39,7 @@ export function ExpensesModal({ onClose }: { onClose: () => void }) {
         <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Court Amount</span>
         <input
           type="number"
+          min={0}
           aria-label="Court Amount"
           value={amountInput}
           onChange={e => handleAmountChange(e.target.value)}
