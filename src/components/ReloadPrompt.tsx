@@ -6,27 +6,29 @@ export function ReloadPrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
-      registration && setInterval(async () => {
-        try {
-          if (registration.installing || !navigator)
-            return
-          if ('connection' in navigator && !navigator.onLine)
-            return
+      if (registration) {
+        setInterval(async () => {
+          try {
+            if (registration.installing || !navigator)
+              return
+            if ('connection' in navigator && !navigator.onLine)
+              return
 
-          const resp = await fetch(_swUrl, {
-            cache: 'no-store',
-            headers: {
-              'cache': 'no-store',
-              'cache-control': 'no-cache',
-            },
-          })
+            const resp = await fetch(_swUrl, {
+              cache: 'no-store',
+              headers: {
+                'cache': 'no-store',
+                'cache-control': 'no-cache',
+              },
+            })
 
-          if (resp?.status === 200)
-            await registration.update()
-        } catch {
-          // Will retry on next interval
-        }
-      }, 15 * 60 * 1000)
+            if (resp?.status === 200)
+              await registration.update()
+          } catch {
+            // Will retry on next interval
+          }
+        }, 15 * 60 * 1000)
+      }
     },
   })
 
