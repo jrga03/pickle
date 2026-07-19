@@ -8,6 +8,8 @@ describe('Modal', () => {
     render(<Modal title="Test Modal" onClose={() => {}}><p>Body here</p></Modal>)
     expect(screen.getByText('Test Modal')).toBeInTheDocument()
     expect(screen.getByText('Body here')).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
   })
 
   it('calls onClose from the dismiss button and the backdrop', async () => {
