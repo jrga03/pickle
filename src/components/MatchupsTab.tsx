@@ -24,17 +24,14 @@ const systemTaglines: Record<PlaySystem, string> = {
 }
 
 export function MatchupsTab() {
-  const { session, setPlaySystem, setMatchupState, setRoundHistory, updatePlayerStatus, setDeferredPlayerIds } = useSession()
+  const { session, readOnly, setPlaySystem, setMatchupState, setRoundHistory, checkIn, checkOut, setDeferredPlayerIds } = useSession()
   const [stayingIds, setStayingIds] = useState<Set<string>>(new Set())
-  const [expandedRound, setExpandedRound] = useState<string | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [editDraft, setEditDraft] = useState<MatchupState | null>(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
 
-  const activePlayers = session.players.filter(p => p.status === 'active')
-  const currentCourts = session.timeSlots.length > 0
-    ? Math.max(...session.timeSlots.map(s => s.numCourts))
-    : 1
+  const activePlayers = session.players.filter(p => p.checkedIn)
+  const currentCourts = session.numCourts
 
   const playerNameMap = new Map(session.players.map(p => [p.id, p.name]))
   const getName = (id: string) => playerNameMap.get(id) ?? id
@@ -45,7 +42,10 @@ export function MatchupsTab() {
 
     // Snapshot current state to history if matchups exist
     if (session.matchupState) {
-      const snapshot = snapshotToHistory(session.matchupState)
+      const snapshot = snapshotToHistory(
+        session.matchupState,
+        session.playSystem === 'challenge-court' ? stayingIds : undefined,
+      )
       setRoundHistory([...session.roundHistory, snapshot])
     }
 
@@ -231,9 +231,10 @@ export function MatchupsTab() {
             {session.players.map(player => (
               <button
                 key={player.id}
-                onClick={() => updatePlayerStatus(player.id, player.status === 'active' ? 'left' : 'active')}
+                disabled={readOnly}
+                onClick={() => (player.checkedIn ? checkOut(player.id) : checkIn(player.id))}
                 className={`rounded-full px-3 py-1.5 text-sm font-medium min-h-[32px] ${
-                  player.status === 'active'
+                  player.checkedIn
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 line-through'
                 }`}
@@ -251,7 +252,7 @@ export function MatchupsTab() {
         </p>
       )}
 
-      {!editMode && (
+      {!editMode && !readOnly && (
         <div className="flex gap-2">
           <button
             onClick={generateRound}
@@ -277,7 +278,7 @@ export function MatchupsTab() {
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               Round {session.roundHistory.length + 1}
             </h3>
-            {!editMode ? (
+            {readOnly ? null : !editMode ? (
               <button
                 onClick={enterEditMode}
                 className="text-xs text-blue-600 dark:text-blue-400 font-medium px-2 py-1 min-h-[28px]"
@@ -327,7 +328,7 @@ export function MatchupsTab() {
                       ) : (
                         <>
                           <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
-                          {session.matchupState!.sittingOut.length > 0 && (
+                          {!readOnly && session.matchupState!.sittingOut.length > 0 && (
                             <button
                               onClick={() => deferPlayer(id)}
                               className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
@@ -359,7 +360,7 @@ export function MatchupsTab() {
                       ) : (
                         <>
                           <p className="font-medium text-gray-900 dark:text-gray-50">{getName(id)}</p>
-                          {session.matchupState!.sittingOut.length > 0 && (
+                          {!readOnly && session.matchupState!.sittingOut.length > 0 && (
                             <button
                               onClick={() => deferPlayer(id)}
                               className="text-xs text-amber-600 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 px-1"
@@ -374,7 +375,7 @@ export function MatchupsTab() {
                   ))}
                 </div>
               </div>
-              {!editMode && session.playSystem !== 'round-robin' && (
+              {!editMode && !readOnly && session.playSystem !== 'round-robin' && (
                 <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                   <button
                     onClick={() => rotateSingleCourt(game.court)}
@@ -427,7 +428,7 @@ export function MatchupsTab() {
             </div>
           )}
 
-          {!editMode && session.playSystem === 'challenge-court' && (
+          {!editMode && !readOnly && session.playSystem === 'challenge-court' && (
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-3 space-y-3">
               <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Winners stay on court?</p>
               {session.matchupState!.games.map(game => {
@@ -464,43 +465,6 @@ export function MatchupsTab() {
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {session.roundHistory.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Previous Rounds
-          </h3>
-          {session.roundHistory.map((round, idx) => (
-            <div key={round.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
-                className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 min-h-[44px]"
-              >
-                Round {idx + 1} — {round.games.length} game{round.games.length !== 1 ? 's' : ''}
-                <span className="float-right text-gray-400 dark:text-gray-500">
-                  {expandedRound === round.id ? '▲' : '▼'}
-                </span>
-              </button>
-              {expandedRound === round.id && (
-                <div className="px-4 pb-3 space-y-2">
-                  {round.games.map(game => (
-                    <div key={game.court} className="text-sm text-gray-600 dark:text-gray-300">
-                      <span className="text-gray-400 dark:text-gray-500">Court {game.court}:</span>{' '}
-                      {getName(game.team1[0])} & {getName(game.team1[1])} vs{' '}
-                      {getName(game.team2[0])} & {getName(game.team2[1])}
-                    </div>
-                  ))}
-                  {round.sittingOut.length > 0 && (
-                    <div className="text-sm text-gray-400 dark:text-gray-500">
-                      Sat out: {round.sittingOut.map(getName).join(', ')}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
         </div>
       )}
     </div>
