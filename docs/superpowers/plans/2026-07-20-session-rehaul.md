@@ -1431,7 +1431,7 @@ git commit -m "refactor: session context exposes games-first ops"
 - Consumes: `useSession()` (Task 5), `winStreak` (Task 3), `gamesPlayedMap` (Task 2).
 - Produces: the court-cards UI. Task 7 extends this exact file.
 
-- [ ] **Step 1: Write failing tests — replace `src/components/__tests__/MatchupsTab.test.tsx`**
+- [x] **Step 1: Write failing tests — replace `src/components/__tests__/MatchupsTab.test.tsx`**
 
 ```tsx
 import { render, screen, within } from '@testing-library/react'
@@ -1532,12 +1532,12 @@ describe('MatchupsTab courts', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/components/__tests__/MatchupsTab.test.tsx`
 Expected: FAIL — old component still imports deleted `../utils/matchups`.
 
-- [ ] **Step 3: Replace `src/components/MatchupsTab.tsx`**
+- [x] **Step 3: Replace `src/components/MatchupsTab.tsx`**
 
 ```tsx
 import { useMemo, useRef } from 'react'
@@ -1685,12 +1685,12 @@ export function MatchupsTab() {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/components/__tests__/MatchupsTab.test.tsx`
 Expected: PASS (7 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/MatchupsTab.tsx src/components/__tests__/MatchupsTab.test.tsx

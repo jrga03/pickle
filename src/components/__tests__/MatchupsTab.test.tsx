@@ -1,22 +1,25 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SessionsProvider } from '../../context/SessionsContext'
 import { SessionProvider } from '../../context/SessionContext'
 import { MatchupsTab } from '../MatchupsTab'
-import { createNewSession, checkInPlayer } from '../../utils/sessionOps'
+import { createNewSession, checkInPlayer, assignToCourt } from '../../utils/sessionOps'
 import { saveSessions } from '../../utils/storage'
-import type { Session } from '../../types'
+import type { Session, PlaySystem } from '../../types'
 
-function sessionWithFour(): Session {
+function makeSession(names: string[], playSystem: PlaySystem = 'paddle-queue', numCourts = 2): Session {
   let s = createNewSession({
-    date: '2026-07-18', venue: '', numCourts: 1,
-    courtAmount: null, playSystem: 'paddle-queue',
-    playerNames: ['Alice', 'Ben', 'Cara', 'Dan'],
+    date: '2026-07-20', venue: '', numCourts, courtAmount: null,
+    playSystem, playerNames: names,
   })
-  const ids = s.players.map(p => p.id)
-  for (const id of ids) s = checkInPlayer(s, id)
+  for (const p of s.players) s = checkInPlayer(s, p.id)
   return s
+}
+
+function withLiveGame(s: Session, court = 1): Session {
+  const [a, b, c, d] = s.queue
+  return assignToCourt(s, { team1: [a, b], team2: [c, d] }, court)
 }
 
 function renderTab(session: Session) {
@@ -30,46 +33,64 @@ function renderTab(session: Session) {
   )
 }
 
-describe('MatchupsTab', () => {
+function courtCard(court: number) {
+  return screen.getByText(`Court ${court}`).closest('div[data-court]') as HTMLElement
+}
+
+describe('MatchupsTab courts', () => {
   beforeEach(() => localStorage.clear())
 
-  it('generates a round from checked-in players', async () => {
-    const user = userEvent.setup()
-    renderTab(sessionWithFour())
-    await user.click(screen.getByText('Generate Matchups'))
+  it('renders one card per court with free state', () => {
+    renderTab(makeSession(['A', 'B', 'C', 'D'], 'paddle-queue', 2))
     expect(screen.getByText('Court 1')).toBeInTheDocument()
-    expect(screen.getByText('Round 1')).toBeInTheDocument()
+    expect(screen.getByText('Court 2')).toBeInTheDocument()
+    expect(screen.getAllByText('Free')).toHaveLength(2)
   })
 
-  it('needs 4 checked-in players', () => {
-    const s = createNewSession({
-      date: '2026-07-18', venue: '', numCourts: 1,
-      courtAmount: null, playSystem: 'paddle-queue',
-      playerNames: ['Alice', 'Ben', 'Cara', 'Dan'],
-    }) // nobody checked in
-    renderTab(s)
-    expect(screen.getByText(/Need at least 4 active players/)).toBeInTheDocument()
+  it('has no Roster section or legacy round buttons', () => {
+    renderTab(makeSession(['A', 'B', 'C', 'D']))
+    expect(screen.queryByText('Roster')).toBeNull()
+    expect(screen.queryByText(/Next Round|Generate Matchups|Reshuffle/)).toBeNull()
   })
 
-  it('hides generate controls when the session is ended', () => {
-    renderTab({ ...sessionWithFour(), status: 'ended' })
-    expect(screen.queryByText('Generate Matchups')).toBeNull()
-    expect(screen.getByText('Paddle Queue')).toBeDisabled()
-  })
-
-  it('preserves round history when saving an edit', async () => {
+  it('shows teams and win buttons on a live court; a win frees the court', async () => {
     const user = userEvent.setup()
-    let s = sessionWithFour()
-    const [a, b, c, d] = s.players.map(p => p.id)
-    s = {
-      ...s,
-      matchupState: { games: [{ court: 1, team1: [a, b] as [string, string], team2: [c, d] as [string, string] }], sittingOut: [] },
-      roundHistory: [{ id: 'r1', games: [{ court: 1, team1: [a, c] as [string, string], team2: [b, d] as [string, string] }], sittingOut: [] }],
-    }
-    renderTab(s)
-    await user.click(screen.getByText('Edit'))
-    await user.click(screen.getByText('Save'))
-    const stored = JSON.parse(localStorage.getItem('pickleball-sessions')!)
-    expect(stored[0].roundHistory).toHaveLength(1)
+    renderTab(withLiveGame(makeSession(['A', 'B', 'C', 'D', 'E'])))
+    const card = courtCard(1)
+    expect(within(card).getByText('A')).toBeInTheDocument()
+    await user.click(within(card).getByRole('button', { name: 'Team 1 Wins' }))
+    expect(within(courtCard(1)).getByText('Free')).toBeInTheDocument()
+  })
+
+  it('challenge court: win keeps winners on court with streak', async () => {
+    const user = userEvent.setup()
+    renderTab(withLiveGame(makeSession(['A', 'B', 'C', 'D', 'E'], 'challenge-court')))
+    await user.click(within(courtCard(1)).getByRole('button', { name: 'Team 1 Wins' }))
+    const card = courtCard(1)
+    expect(within(card).getByText('A & B')).toBeInTheDocument()
+    expect(within(card).getByText(/1 win · awaiting challengers/)).toBeInTheDocument()
+  })
+
+  it('cancel returns players and records nothing after confirm', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    renderTab(withLiveGame(makeSession(['A', 'B', 'C', 'D'])))
+    await user.click(screen.getByRole('button', { name: 'Cancel game on court 1' }))
+    expect(within(courtCard(1)).getByText('Free')).toBeInTheDocument()
+    vi.restoreAllMocks()
+  })
+
+  it('hides action buttons when read-only', () => {
+    const s = withLiveGame(makeSession(['A', 'B', 'C', 'D']))
+    renderTab({ ...s, status: 'ended' })
+    expect(screen.queryByRole('button', { name: 'Team 1 Wins' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Cancel game/ })).toBeNull()
+  })
+
+  it('keeps rendering a live game on a court beyond numCourts', () => {
+    const s = withLiveGame(makeSession(['A', 'B', 'C', 'D'], 'paddle-queue', 2), 2)
+    renderTab({ ...s, numCourts: 1 })
+    expect(screen.getByText('Court 2')).toBeInTheDocument()
+    expect(screen.queryByText('Court 3')).toBeNull()
   })
 })
