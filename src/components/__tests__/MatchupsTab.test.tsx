@@ -94,3 +94,51 @@ describe('MatchupsTab courts', () => {
     expect(screen.queryByText('Court 3')).toBeNull()
   })
 })
+
+describe('MatchupsTab suggestions', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('lists ranked candidates with an assign button per free court', async () => {
+    const user = userEvent.setup()
+    renderTab(makeSession(['A', 'B', 'C', 'D', 'E'], 'paddle-queue', 2))
+    expect(screen.getByText('Up Next')).toBeInTheDocument()
+    const first = screen.getAllByTestId('suggestion')[0]
+    expect(within(first).getByText(/A & B/)).toBeInTheDocument()
+    expect(within(first).getByRole('button', { name: 'Assign to Court 1' })).toBeInTheDocument()
+    expect(within(first).getByRole('button', { name: 'Assign to Court 2' })).toBeInTheDocument()
+    await user.click(within(first).getByRole('button', { name: 'Assign to Court 1' }))
+    expect(within(courtCard(1)).getByRole('button', { name: 'Team 1 Wins' })).toBeInTheDocument()
+  })
+
+  it('smooth-scrolls to the top after assigning', async () => {
+    const user = userEvent.setup()
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView')
+    renderTab(makeSession(['A', 'B', 'C', 'D']))
+    await user.click(screen.getAllByRole('button', { name: 'Assign to Court 1' })[0])
+    expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth' })
+    scrollSpy.mockRestore()
+  })
+
+  it('shows challenger candidates for a held court', async () => {
+    const user = userEvent.setup()
+    renderTab(withLiveGame(makeSession(['A', 'B', 'C', 'D', 'E', 'F'], 'challenge-court')))
+    await user.click(within(courtCard(1)).getByRole('button', { name: 'Team 1 Wins' }))
+    expect(screen.getByText('Challengers · Court 1')).toBeInTheDocument()
+    const first = screen.getAllByTestId('suggestion')[0]
+    expect(within(first).getByText('E & F')).toBeInTheDocument()
+    await user.click(within(first).getByRole('button', { name: 'Assign to Court 1' }))
+    expect(within(courtCard(1)).getByRole('button', { name: 'Team 2 Wins' })).toBeInTheDocument()
+  })
+
+  it('shows waiting chips with game counts but no suggestions when fewer than 4 wait', () => {
+    renderTab(makeSession(['A', 'B', 'C']))
+    expect(screen.queryByText('Up Next')).toBeNull()
+    expect(screen.getByText('Waiting (3)')).toBeInTheDocument()
+    expect(screen.getByText('A · 0')).toBeInTheDocument()
+  })
+
+  it('hides suggestions when read-only', () => {
+    renderTab({ ...makeSession(['A', 'B', 'C', 'D']), status: 'ended' })
+    expect(screen.queryByText('Up Next')).toBeNull()
+  })
+})

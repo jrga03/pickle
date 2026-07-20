@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useSession } from '../context/SessionContext'
 import type { PlaySystem } from '../types'
 import { winStreak } from '../utils/stats'
+import { suggestFoursomes, suggestChallengers, gamesPlayedMap, type Candidate } from '../utils/suggestions'
 
 const systemLabels: Record<PlaySystem, string> = {
   'paddle-queue': 'Paddle Queue',
@@ -16,7 +17,7 @@ const systemTaglines: Record<PlaySystem, string> = {
 }
 
 export function MatchupsTab() {
-  const { session, readOnly, setPlaySystem, recordWin, cancelGame } = useSession()
+  const { session, readOnly, setPlaySystem, recordWin, cancelGame, assignToCourt } = useSession()
   const topRef = useRef<HTMLDivElement>(null)
 
   const playerNameMap = new Map(session.players.map(p => [p.id, p.name]))
@@ -30,6 +31,29 @@ export function MatchupsTab() {
     for (const g of session.liveGames) set.add(g.court)
     return [...set].sort((a, b) => a - b)
   }, [session.numCourts, session.liveGames])
+
+  const gamesCount = useMemo(() => gamesPlayedMap(session.matchHistory), [session.matchHistory])
+
+  const foursomes = useMemo(
+    () => suggestFoursomes(session.queue, session.matchHistory, session.playSystem),
+    [session.queue, session.matchHistory, session.playSystem],
+  )
+
+  const challengerCandidates = useMemo(() => {
+    const map = new Map<number, Candidate[]>()
+    for (const [court, winners] of Object.entries(session.courtWinners)) {
+      map.set(Number(court), suggestChallengers(session.queue, winners))
+    }
+    return map
+  }, [session.queue, session.courtWinners])
+
+  const freeCourts = courts.filter(c =>
+    c <= session.numCourts && !liveByCourt.has(c) && !session.courtWinners[c])
+
+  const assign = (candidate: Candidate, court: number) => {
+    assignToCourt(candidate, court)
+    topRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   const handleCancel = (court: number) => {
     if (window.confirm('Cancel this game? Nothing will be recorded.')) cancelGame(court)
@@ -138,6 +162,70 @@ export function MatchupsTab() {
           )
         })}
       </div>
+
+      {!readOnly && [...challengerCandidates.entries()].map(([court, pairs]) => pairs.length > 0 && (
+        <div key={court} className="space-y-2">
+          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Challengers · Court {court}
+          </h3>
+          {pairs.map((cand, i) => (
+            <div
+              key={i}
+              data-testid="suggestion"
+              className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex items-center justify-between gap-2"
+            >
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{teamNames(cand.team2)}</p>
+              <button
+                onClick={() => assign(cand, court)}
+                className="rounded-md bg-green-600 dark:bg-green-700 text-white px-3 py-2 text-xs font-medium min-h-[40px] shrink-0"
+              >
+                Assign to Court {court}
+              </button>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {!readOnly && freeCourts.length > 0 && foursomes.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Up Next</h3>
+          {foursomes.map((cand, i) => (
+            <div
+              key={i}
+              data-testid="suggestion"
+              className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2"
+            >
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-50 text-center">
+                {teamNames(cand.team1)} <span className="text-gray-400 dark:text-gray-500">vs</span> {teamNames(cand.team2)}
+              </p>
+              <div className="flex gap-2">
+                {freeCourts.map(court => (
+                  <button
+                    key={court}
+                    onClick={() => assign(cand, court)}
+                    className="flex-1 rounded-md bg-green-600 dark:bg-green-700 text-white py-2 text-xs font-medium min-h-[40px]"
+                  >
+                    Assign to Court {court}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {session.queue.length > 0 && (
+        <div className="bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">Waiting ({session.queue.length})</p>
+          <div className="flex flex-wrap gap-1">
+            {session.queue.map(id => (
+              <span key={id} className="text-sm px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                {getName(id)} · {gamesCount.get(id) ?? 0}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

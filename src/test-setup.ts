@@ -14,3 +14,8 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     dispatchEvent: () => false,
   })) as typeof window.matchMedia
 }
+
+// jsdom does not implement scrollIntoView; MatchupsTab calls it after assigning.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {}
+}

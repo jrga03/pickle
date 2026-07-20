@@ -1710,7 +1710,7 @@ git commit -m "feat: court cards with win and cancel actions"
 - Consumes: `suggestFoursomes`, `suggestChallengers`, `gamesPlayedMap`, `Candidate` (Task 2); `assignToCourt` from `useSession()` (Task 5).
 - Produces: completed MatchupsTab.
 
-- [ ] **Step 1: Add the scrollIntoView stub to `src/test-setup.ts`** (append at end)
+- [x] **Step 1: Add the scrollIntoView stub to `src/test-setup.ts`** (append at end)
 
 ```ts
 // jsdom does not implement scrollIntoView; MatchupsTab calls it after assigning.
@@ -1719,7 +1719,7 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
 }
 ```
 
-- [ ] **Step 2: Append failing tests to `src/components/__tests__/MatchupsTab.test.tsx`**
+- [x] **Step 2: Append failing tests to `src/components/__tests__/MatchupsTab.test.tsx`**
 
 ```tsx
 describe('MatchupsTab suggestions', () => {
@@ -1771,12 +1771,12 @@ describe('MatchupsTab suggestions', () => {
 })
 ```
 
-- [ ] **Step 3: Run tests to verify the new block fails**
+- [x] **Step 3: Run tests to verify the new block fails**
 
 Run: `npx vitest run src/components/__tests__/MatchupsTab.test.tsx`
 Expected: FAIL — no "Up Next" section yet (Task 6 tests still pass).
 
-- [ ] **Step 4: Extend `src/components/MatchupsTab.tsx`**
+- [x] **Step 4: Extend `src/components/MatchupsTab.tsx`**
 
 4a. Replace the import lines
 
@@ -1902,12 +1902,12 @@ with
       )}
 ```
 
-- [ ] **Step 5: Run the full component test file**
+- [x] **Step 5: Run the full component test file**
 
 Run: `npx vitest run src/components/__tests__/MatchupsTab.test.tsx`
 Expected: PASS (12 tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/MatchupsTab.tsx src/components/__tests__/MatchupsTab.test.tsx src/test-setup.ts
