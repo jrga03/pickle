@@ -2523,7 +2523,7 @@ git add -A
 git commit -m "test: align remaining suites with games-first model"
 ```
 
-- [ ] **Step 6 (recommended): Real-browser verification**
+- [x] **Step 6 (recommended): Real-browser verification** *(Playwright + system Chrome, 390×844: 16/16 checks — create → check-in 5 → assign → win → Matches/Players → expenses split 400.00 each → calculator 1400.00 → reload persistence; smooth scroll 284→0; screenshots reviewed)*
 
 Use the project's `verify` skill (build/launch/drive recipe) to click through: create session → check in 5 players → assign a suggestion → record a win → check Matches + Players tabs → open the calculator. Confirm the smooth scroll and expense split still work on mobile viewport.
 
