@@ -67,7 +67,7 @@
 
 Note: after this task, `sessionOps.ts`, `matchups.ts`, and the UI no longer typecheck (they reference removed types). That is expected until Tasks 4–11; only run the scoped test file below.
 
-- [ ] **Step 1: Replace `src/types.ts`**
+- [x] **Step 1: Replace `src/types.ts`**
 
 ```ts
 export type SessionStatus = 'active' | 'ended'
@@ -97,7 +97,7 @@ export interface CalculatorRow { id: string; hours: string; courts: string; rate
 export interface CalculatorState { defaultRate: string; rows: CalculatorRow[] }
 ```
 
-- [ ] **Step 2: Replace `src/utils/storage.ts`** (legacy migration deleted entirely)
+- [x] **Step 2: Replace `src/utils/storage.ts`** (legacy migration deleted entirely)
 
 ```ts
 import type { Session, SavedVenue, SavedPlayer, CalculatorState } from '../types'
@@ -179,7 +179,7 @@ export function loadCalculator(): CalculatorState {
 }
 ```
 
-- [ ] **Step 3: Replace `src/utils/__tests__/storage.test.ts` with failing tests**
+- [x] **Step 3: Replace `src/utils/__tests__/storage.test.ts` with failing tests**
 
 ```ts
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -242,12 +242,12 @@ describe('storage', () => {
 })
 ```
 
-- [ ] **Step 4: Run the scoped tests**
+- [x] **Step 4: Run the scoped tests**
 
 Run: `npx vitest run src/utils/__tests__/storage.test.ts`
 Expected: PASS (5 tests). If you wrote the test first against old storage, it fails on `loadCalculator` not exported — either order is fine as long as the final state passes.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/types.ts src/utils/storage.ts src/utils/__tests__/storage.test.ts
