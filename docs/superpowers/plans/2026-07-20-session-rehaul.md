@@ -266,7 +266,7 @@ git commit -m "feat: games-first data model, storage shape filter, calculator pe
 - Consumes: `CompletedGame`, `PlaySystem` from `src/types.ts` (Task 1).
 - Produces: `Candidate { team1: [string, string]; team2: [string, string] }`, `MAX_SUGGESTIONS = 15`, `gamesPlayedMap(history: CompletedGame[]): Map<string, number>`, `suggestFoursomes(queue: string[], history: CompletedGame[], playSystem: PlaySystem): Candidate[]`, `suggestChallengers(queue: string[], winners: [string, string]): Candidate[]` (team1 is always the winners).
 
-- [ ] **Step 1: Write failing tests `src/utils/__tests__/suggestions.test.ts`**
+- [x] **Step 1: Write failing tests `src/utils/__tests__/suggestions.test.ts`**
 
 ```ts
 import { describe, it, expect } from 'vitest'
@@ -394,12 +394,12 @@ describe('suggestChallengers', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/utils/__tests__/suggestions.test.ts`
 Expected: FAIL — `Cannot find module '../suggestions'` (or similar).
 
-- [ ] **Step 3: Implement `src/utils/suggestions.ts`**
+- [x] **Step 3: Implement `src/utils/suggestions.ts`**
 
 ```ts
 import type { CompletedGame, PlaySystem } from '../types'
@@ -572,12 +572,12 @@ export function suggestChallengers(
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/utils/__tests__/suggestions.test.ts`
 Expected: PASS (15 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/utils/suggestions.ts src/utils/__tests__/suggestions.test.ts
