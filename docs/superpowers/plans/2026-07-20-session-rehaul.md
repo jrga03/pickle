@@ -2496,27 +2496,27 @@ git commit -m "feat: standalone court cost calculator in list header"
 **Files:**
 - Modify: any remaining test files referencing the old model (`src/screens/__tests__/screens.test.tsx`, `src/context/__tests__/SessionsContext.test.tsx`, `src/components/__tests__/ExpensesModal.test.tsx` if needed)
 
-- [ ] **Step 1: Sweep for stale references**
+- [x] **Step 1: Sweep for stale references** *(only hit: the intentional old-shape fixture in storage.test.ts)*
 
 Run: `grep -rn "matchupState\|roundHistory\|sittingOut\|deferredPlayerIds\|MatchupState" src --include="*.ts" --include="*.tsx"`
 Expected: no hits. Fix any stragglers by switching fixtures to the new shape (build sessions with `createNewSession` + `checkInPlayer` + `assignToCourt` + `recordWin`, as in Task 8's `sessionWithGames()`), and assertions to the new UI copy.
 
-- [ ] **Step 2: Run the full suite**
+- [x] **Step 2: Run the full suite** *(16 files, 103 tests, all pass — no straggler fixes needed)*
 
 Run: `npx vitest run`
 Expected: ALL PASS. Any failing file gets its fixtures/assertions updated to the new model — the components themselves are already correct from Tasks 6–11; do not change component behavior to satisfy an old test.
 
-- [ ] **Step 3: Typecheck and build**
+- [x] **Step 3: Typecheck and build**
 
 Run: `npm run build`
 Expected: `tsc -b` clean (no unused exports from the old model remain), Vite build succeeds.
 
-- [ ] **Step 4: Lint**
+- [x] **Step 4: Lint** *(fixed one unused test import: `addRosterPlayer` in sessionOps.test.ts)*
 
 Run: `npm run lint`
 Expected: clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A

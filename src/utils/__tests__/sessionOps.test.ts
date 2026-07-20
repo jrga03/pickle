@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  createNewSession, checkInPlayer, checkOutPlayer, addRosterPlayer, removeRosterPlayer,
+  createNewSession, checkInPlayer, checkOutPlayer, removeRosterPlayer,
   assignToCourt, recordWin, cancelGame, setGameWinner, deleteGame,
   setPlaySystem, updateSessionFields, compareSessionsDesc,
 } from '../sessionOps'
