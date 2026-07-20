@@ -147,10 +147,10 @@ export function SessionModal({ sessionId, onClose, onCreated }: SessionModalProp
           />
         </label>
         <label className="block flex-1">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Court Amount (optional)</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Total amount (optional)</span>
           <input
             type="number"
-            aria-label="Court Amount"
+            aria-label="Total Amount"
             value={amount}
             onChange={e => setAmount(e.target.value)}
             placeholder="e.g. 2000"

@@ -2212,7 +2212,7 @@ git commit -m "feat: per-player game count, record, and win rate"
 **Interfaces:**
 - Consumes/produces: none new — copy change only. The field still writes `courtAmount`.
 
-- [ ] **Step 1: Update the label in `src/components/SessionModal.tsx`**
+- [x] **Step 1: Update the label in `src/components/SessionModal.tsx`**
 
 Replace
 
@@ -2232,16 +2232,16 @@ with
             aria-label="Total Amount"
 ```
 
-- [ ] **Step 2: Update `src/components/__tests__/SessionModal.test.tsx`**
+- [x] **Step 2: Update `src/components/__tests__/SessionModal.test.tsx`** *(no-op — the test file contains no Court Amount matchers)*
 
 Replace every `getByLabelText('Court Amount')` / `{ name: 'Court Amount' }` / `/Court Amount/` matcher with `'Total Amount'` (same query kinds, new string). No behavioral assertions change.
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run: `npx vitest run src/components/__tests__/SessionModal.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/SessionModal.tsx src/components/__tests__/SessionModal.test.tsx
