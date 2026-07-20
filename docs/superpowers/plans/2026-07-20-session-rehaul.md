@@ -2116,7 +2116,7 @@ git commit -m "feat: flat match list with winner correction and record delete"
 - Consumes: `computePlayerStats` (Task 3), `useSession()`.
 - Produces: stat sublines.
 
-- [ ] **Step 1: Update tests — in `src/components/__tests__/PlayersTab.test.tsx`, delete the test asserting the "played earlier" subtext and add**
+- [x] **Step 1: Update tests — in `src/components/__tests__/PlayersTab.test.tsx`, delete the test asserting the "played earlier" subtext and add**
 
 (reuse the file's existing render helper; if it builds sessions via `createNewSession`, extend fixtures the same way as below)
 
@@ -2143,12 +2143,12 @@ it('shows games, W–L, and win percentage per player', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify the new test fails**
+- [x] **Step 2: Run tests to verify the new test fails**
 
 Run: `npx vitest run src/components/__tests__/PlayersTab.test.tsx`
 Expected: FAIL — stat subline not rendered.
 
-- [ ] **Step 3: Edit `src/components/PlayersTab.tsx`**
+- [x] **Step 3: Edit `src/components/PlayersTab.tsx`**
 
 Add the import and compute stats once:
 
@@ -2189,12 +2189,12 @@ with
             </div>
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/components/__tests__/PlayersTab.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/PlayersTab.tsx src/components/__tests__/PlayersTab.test.tsx

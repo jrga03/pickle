@@ -1,8 +1,10 @@
 import { useSession } from '../context/SessionContext'
+import { computePlayerStats } from '../utils/stats'
 
 export function PlayersTab() {
   const { session, readOnly, checkIn, checkOut } = useSession()
   const checkedInCount = session.players.filter(p => p.checkedIn).length
+  const stats = computePlayerStats(session.matchHistory)
 
   return (
     <div className="space-y-4">
@@ -24,9 +26,14 @@ export function PlayersTab() {
           >
             <div className="min-w-0">
               <p className="font-medium text-gray-900 dark:text-gray-50 truncate">{player.name}</p>
-              {player.participated && !player.checkedIn && (
-                <p className="text-xs text-gray-400 dark:text-gray-500">played earlier</p>
-              )}
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {(() => {
+                  const s = stats.get(player.id)
+                  if (!s) return '0 games'
+                  const pct = Math.round((s.wins / s.games) * 100)
+                  return `${s.games} game${s.games !== 1 ? 's' : ''} · ${s.wins}W–${s.losses}L · ${pct}%`
+                })()}
+              </p>
             </div>
             {!readOnly && (
               <button

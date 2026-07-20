@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { SessionsProvider } from '../../context/SessionsContext'
 import { SessionProvider } from '../../context/SessionContext'
 import { PlayersTab } from '../PlayersTab'
-import { createNewSession, checkInPlayer, checkOutPlayer } from '../../utils/sessionOps'
+import { createNewSession, checkInPlayer, assignToCourt, recordWin } from '../../utils/sessionOps'
 import { saveSessions } from '../../utils/storage'
 import type { Session } from '../../types'
 
@@ -24,6 +24,18 @@ const sample = () => createNewSession({
   courtAmount: null, playSystem: 'paddle-queue', playerNames: ['Alice', 'Ben'],
 })
 
+function sessionWithStats(): Session {
+  let s = createNewSession({
+    date: '2026-07-20', venue: '', numCourts: 1, courtAmount: null,
+    playSystem: 'paddle-queue', playerNames: ['A', 'B', 'C', 'D', 'E'],
+  })
+  for (const p of s.players) s = checkInPlayer(s, p.id)
+  const [a, b, c, d] = s.players.map(p => p.id)
+  s = assignToCourt(s, { team1: [a, b], team2: [c, d] }, 1)
+  s = recordWin(s, 1, 1)
+  return s
+}
+
 describe('PlayersTab', () => {
   beforeEach(() => localStorage.clear())
 
@@ -42,12 +54,11 @@ describe('PlayersTab', () => {
     expect(screen.queryByText('Check in')).toBeNull()
   })
 
-  it('shows "played earlier" for participated players who checked out', () => {
-    let s = sample()
-    s = checkInPlayer(s, s.players[0].id)
-    s = checkOutPlayer(s, s.players[0].id)
-    renderTab(s)
-    expect(screen.getByText('played earlier')).toBeInTheDocument()
+  it('shows games, W–L, and win percentage per player', () => {
+    renderTab(sessionWithStats())
+    expect(screen.getAllByText('1 game · 1W–0L · 100%')).toHaveLength(2) // A and B
+    expect(screen.getAllByText('1 game · 0W–1L · 0%')).toHaveLength(2)   // C and D
+    expect(screen.getByText('0 games')).toBeInTheDocument()              // E
   })
 
   it('shows the empty-roster message when there are no players', () => {
