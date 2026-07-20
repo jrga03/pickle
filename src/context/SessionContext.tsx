@@ -1,8 +1,15 @@
 import { createContext, useContext, useCallback, type ReactNode } from 'react'
-import type { Session, PlaySystem, MatchupState, Round } from '../types'
+import type { Session, PlaySystem } from '../types'
+import type { Candidate } from '../utils/suggestions'
 import { useSessions } from './SessionsContext'
 import {
-  checkInPlayer, checkOutPlayer, setGameWinner as setGameWinnerOp,
+  checkInPlayer, checkOutPlayer,
+  assignToCourt as assignToCourtOp,
+  recordWin as recordWinOp,
+  cancelGame as cancelGameOp,
+  setGameWinner as setGameWinnerOp,
+  deleteGame as deleteGameOp,
+  setPlaySystem as setPlaySystemOp,
 } from '../utils/sessionOps'
 
 interface SessionContextType {
@@ -11,10 +18,11 @@ interface SessionContextType {
   checkIn: (playerId: string) => void
   checkOut: (playerId: string) => void
   setPlaySystem: (system: PlaySystem) => void
-  setMatchupState: (state: MatchupState | null) => void
-  setRoundHistory: (history: Round[]) => void
-  setDeferredPlayerIds: (ids: string[]) => void
-  setGameWinner: (roundId: string, court: number, winner: 1 | 2 | undefined) => void
+  assignToCourt: (candidate: Candidate, court: number) => void
+  recordWin: (court: number, winner: 1 | 2) => void
+  cancelGame: (court: number) => void
+  setGameWinner: (gameId: string, winner: 1 | 2) => void
+  deleteGame: (gameId: string) => void
 }
 
 const SessionContext = createContext<SessionContextType | null>(null)
@@ -30,19 +38,22 @@ export function SessionProvider({ sessionId, children }: { sessionId: string; ch
     updateSession(sessionId, s => checkOutPlayer(s, playerId)), [sessionId, updateSession])
 
   const setPlaySystem = useCallback((playSystem: PlaySystem) =>
-    updateSession(sessionId, s => ({ ...s, playSystem })), [sessionId, updateSession])
+    updateSession(sessionId, s => setPlaySystemOp(s, playSystem)), [sessionId, updateSession])
 
-  const setMatchupState = useCallback((matchupState: MatchupState | null) =>
-    updateSession(sessionId, s => ({ ...s, matchupState })), [sessionId, updateSession])
+  const assignToCourt = useCallback((candidate: Candidate, court: number) =>
+    updateSession(sessionId, s => assignToCourtOp(s, candidate, court)), [sessionId, updateSession])
 
-  const setRoundHistory = useCallback((roundHistory: Round[]) =>
-    updateSession(sessionId, s => ({ ...s, roundHistory })), [sessionId, updateSession])
+  const recordWin = useCallback((court: number, winner: 1 | 2) =>
+    updateSession(sessionId, s => recordWinOp(s, court, winner)), [sessionId, updateSession])
 
-  const setDeferredPlayerIds = useCallback((deferredPlayerIds: string[]) =>
-    updateSession(sessionId, s => ({ ...s, deferredPlayerIds })), [sessionId, updateSession])
+  const cancelGame = useCallback((court: number) =>
+    updateSession(sessionId, s => cancelGameOp(s, court)), [sessionId, updateSession])
 
-  const setGameWinner = useCallback((roundId: string, court: number, winner: 1 | 2 | undefined) =>
-    updateSession(sessionId, s => setGameWinnerOp(s, roundId, court, winner)), [sessionId, updateSession])
+  const setGameWinner = useCallback((gameId: string, winner: 1 | 2) =>
+    updateSession(sessionId, s => setGameWinnerOp(s, gameId, winner)), [sessionId, updateSession])
+
+  const deleteGame = useCallback((gameId: string) =>
+    updateSession(sessionId, s => deleteGameOp(s, gameId)), [sessionId, updateSession])
 
   if (!session) return null
 
@@ -50,8 +61,8 @@ export function SessionProvider({ sessionId, children }: { sessionId: string; ch
     <SessionContext.Provider value={{
       session,
       readOnly: session.status === 'ended',
-      checkIn, checkOut, setPlaySystem, setMatchupState,
-      setRoundHistory, setDeferredPlayerIds, setGameWinner,
+      checkIn, checkOut, setPlaySystem,
+      assignToCourt, recordWin, cancelGame, setGameWinner, deleteGame,
     }}>
       {children}
     </SessionContext.Provider>

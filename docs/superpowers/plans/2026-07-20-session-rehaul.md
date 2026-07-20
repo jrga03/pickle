@@ -1234,7 +1234,7 @@ git commit -m "refactor: games-first session ops; drop round-based matchups modu
 - Consumes: ops from Task 4, `Candidate` from Task 2.
 - Produces: `useSession()` returning `{ session, readOnly, checkIn(playerId), checkOut(playerId), setPlaySystem(system), assignToCourt(candidate, court), recordWin(court, winner), cancelGame(court), setGameWinner(gameId, winner), deleteGame(gameId) }`. Components in Tasks 6–9 rely on these exact names.
 
-- [ ] **Step 1: Write failing tests — replace `src/context/__tests__/SessionContext.test.tsx`**
+- [x] **Step 1: Write failing tests — replace `src/context/__tests__/SessionContext.test.tsx`**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -1321,12 +1321,12 @@ describe('SessionContext', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/context/__tests__/SessionContext.test.tsx`
 Expected: FAIL — `recordWin` is not a function (old context API).
 
-- [ ] **Step 3: Replace `src/context/SessionContext.tsx`**
+- [x] **Step 3: Replace `src/context/SessionContext.tsx`**
 
 ```tsx
 import { createContext, useContext, useCallback, type ReactNode } from 'react'
@@ -1407,12 +1407,12 @@ export function useSession() {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/context/__tests__/SessionContext.test.tsx`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/context/SessionContext.tsx src/context/__tests__/SessionContext.test.tsx

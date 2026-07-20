@@ -3,76 +3,80 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { SessionsProvider } from '../SessionsContext'
 import { SessionProvider, useSession } from '../SessionContext'
-import { createNewSession } from '../../utils/sessionOps'
+import { createNewSession, checkInPlayer, assignToCourt } from '../../utils/sessionOps'
 import { saveSessions } from '../../utils/storage'
+import type { Session } from '../../types'
 
-function seedSession() {
-  const session = createNewSession({
-    date: '2026-07-18', venue: 'BGC', numCourts: 2,
-    courtAmount: null, playSystem: 'paddle-queue', playerNames: ['Alice', 'Ben'],
+function makeSession(): Session {
+  let s = createNewSession({
+    date: '2026-07-20', venue: '', numCourts: 1, courtAmount: null,
+    playSystem: 'paddle-queue', playerNames: ['A', 'B', 'C', 'D', 'E'],
   })
-  saveSessions([session])
-  return session
+  for (const p of s.players) s = checkInPlayer(s, p.id)
+  const [a, b, c, d] = s.players.map(p => p.id)
+  return assignToCourt(s, { team1: [a, b], team2: [c, d] }, 1)
 }
 
-function TestConsumer() {
-  const { session, readOnly, checkIn, checkOut } = useSession()
-  const alice = session.players[0]
+function Probe() {
+  const { session, readOnly, recordWin, cancelGame, setGameWinner, deleteGame } = useSession()
   return (
     <div>
-      <span data-testid="checked-in">{session.players.filter(p => p.checkedIn).length}</span>
-      <span data-testid="participated">{session.players.filter(p => p.participated).length}</span>
-      <span data-testid="read-only">{String(readOnly)}</span>
-      <button onClick={() => checkIn(alice.id)}>Check In</button>
-      <button onClick={() => checkOut(alice.id)}>Check Out</button>
+      <p>live:{session.liveGames.length}</p>
+      <p>history:{session.matchHistory.length}</p>
+      <p>queue:{session.queue.length}</p>
+      <p>readOnly:{String(readOnly)}</p>
+      <button onClick={() => recordWin(1, 1)}>win1</button>
+      <button onClick={() => cancelGame(1)}>cancel</button>
+      <button onClick={() => session.matchHistory[0] && setGameWinner(session.matchHistory[0].id, 2)}>flip</button>
+      <button onClick={() => session.matchHistory[0] && deleteGame(session.matchHistory[0].id)}>delete</button>
     </div>
+  )
+}
+
+function renderProbe(session: Session) {
+  saveSessions([session])
+  return render(
+    <SessionsProvider>
+      <SessionProvider sessionId={session.id}>
+        <Probe />
+      </SessionProvider>
+    </SessionsProvider>
   )
 }
 
 describe('SessionContext', () => {
   beforeEach(() => localStorage.clear())
 
-  it('binds to the given session and toggles check-in with sticky participation', async () => {
-    const session = seedSession()
+  it('recordWin moves the live game into history and re-queues players', async () => {
     const user = userEvent.setup()
-    render(
-      <SessionsProvider>
-        <SessionProvider sessionId={session.id}>
-          <TestConsumer />
-        </SessionProvider>
-      </SessionsProvider>
-    )
-    expect(screen.getByTestId('read-only')).toHaveTextContent('false')
-    expect(screen.getByTestId('checked-in')).toHaveTextContent('0')
-    await user.click(screen.getByText('Check In'))
-    expect(screen.getByTestId('checked-in')).toHaveTextContent('1')
-    expect(screen.getByTestId('participated')).toHaveTextContent('1')
-    await user.click(screen.getByText('Check Out'))
-    expect(screen.getByTestId('checked-in')).toHaveTextContent('0')
-    expect(screen.getByTestId('participated')).toHaveTextContent('1')
+    renderProbe(makeSession())
+    expect(screen.getByText('live:1')).toBeInTheDocument()
+    await user.click(screen.getByText('win1'))
+    expect(screen.getByText('live:0')).toBeInTheDocument()
+    expect(screen.getByText('history:1')).toBeInTheDocument()
+    expect(screen.getByText('queue:5')).toBeInTheDocument()
   })
 
-  it('reports readOnly for an ended session', () => {
-    const session = seedSession()
-    saveSessions([{ ...session, status: 'ended' }])
-    render(
-      <SessionsProvider>
-        <SessionProvider sessionId={session.id}>
-          <TestConsumer />
-        </SessionProvider>
-      </SessionsProvider>
-    )
-    expect(screen.getByTestId('read-only')).toHaveTextContent('true')
+  it('cancelGame frees the court without recording', async () => {
+    const user = userEvent.setup()
+    renderProbe(makeSession())
+    await user.click(screen.getByText('cancel'))
+    expect(screen.getByText('live:0')).toBeInTheDocument()
+    expect(screen.getByText('history:0')).toBeInTheDocument()
   })
 
-  it('renders nothing for an unknown session id', () => {
-    render(
-      <SessionsProvider>
-        <SessionProvider sessionId="nope">
-          <TestConsumer />
-        </SessionProvider>
-      </SessionsProvider>
-    )
-    expect(screen.queryByTestId('checked-in')).toBeNull()
+  it('setGameWinner and deleteGame edit history', async () => {
+    const user = userEvent.setup()
+    renderProbe(makeSession())
+    await user.click(screen.getByText('win1'))
+    await user.click(screen.getByText('flip'))
+    expect(screen.getByText('history:1')).toBeInTheDocument()
+    await user.click(screen.getByText('delete'))
+    expect(screen.getByText('history:0')).toBeInTheDocument()
+  })
+
+  it('readOnly reflects ended status', () => {
+    renderProbe({ ...makeSession(), status: 'ended' })
+    expect(screen.getByText('readOnly:true')).toBeInTheDocument()
   })
 })
