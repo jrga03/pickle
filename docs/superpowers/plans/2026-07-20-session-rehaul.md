@@ -596,7 +596,7 @@ git commit -m "feat: deterministic ranked suggestion engine"
 - Consumes: `CompletedGame` from Task 1.
 - Produces: `PlayerStats { games: number; wins: number; losses: number }`, `computePlayerStats(history: CompletedGame[]): Map<string, PlayerStats>`, `winStreak(history: CompletedGame[], court: number, pair: [string, string]): number`.
 
-- [ ] **Step 1: Write failing tests `src/utils/__tests__/stats.test.ts`**
+- [x] **Step 1: Write failing tests `src/utils/__tests__/stats.test.ts`**
 
 ```ts
 import { describe, it, expect } from 'vitest'
@@ -655,12 +655,12 @@ describe('winStreak', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/utils/__tests__/stats.test.ts`
 Expected: FAIL — cannot find module `../stats`.
 
-- [ ] **Step 3: Implement `src/utils/stats.ts`**
+- [x] **Step 3: Implement `src/utils/stats.ts`**
 
 ```ts
 import type { CompletedGame } from '../types'
@@ -711,12 +711,12 @@ export function winStreak(
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/utils/__tests__/stats.test.ts`
 Expected: PASS (5 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/utils/stats.ts src/utils/__tests__/stats.test.ts
