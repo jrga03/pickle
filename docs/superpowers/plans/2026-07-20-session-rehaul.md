@@ -2261,7 +2261,7 @@ git commit -m "feat: relabel court amount to total amount"
 - Consumes: `Modal` component (existing, props `{ title, onClose, children }`), `loadCalculator`/`saveCalculator` (Task 1), `CalculatorRow`/`CalculatorState` types (Task 1).
 - Produces: `CourtCostCalculator({ onClose }: { onClose: () => void })`.
 
-- [ ] **Step 1: Write failing tests `src/components/__tests__/CourtCostCalculator.test.tsx`**
+- [x] **Step 1: Write failing tests `src/components/__tests__/CourtCostCalculator.test.tsx`**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -2331,12 +2331,12 @@ describe('CourtCostCalculator', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/components/__tests__/CourtCostCalculator.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Create `src/components/CourtCostCalculator.tsx`**
+- [x] **Step 3: Create `src/components/CourtCostCalculator.tsx`**
 
 ```tsx
 import { useState } from 'react'
@@ -2434,7 +2434,7 @@ export function CourtCostCalculator({ onClose }: { onClose: () => void }) {
 }
 ```
 
-- [ ] **Step 4: Wire the header button in `src/screens/SessionListScreen.tsx`**
+- [x] **Step 4: Wire the header button in `src/screens/SessionListScreen.tsx`**
 
 Add imports and state:
 
@@ -2477,12 +2477,12 @@ And before the closing tag of the screen (next to the `showCreate` modal):
       {showCalculator && <CourtCostCalculator onClose={() => setShowCalculator(false)} />}
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `npx vitest run src/components/__tests__/CourtCostCalculator.test.tsx`
 Expected: PASS (5 tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/CourtCostCalculator.tsx src/components/__tests__/CourtCostCalculator.test.tsx src/screens/SessionListScreen.tsx

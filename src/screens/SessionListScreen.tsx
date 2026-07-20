@@ -5,6 +5,7 @@ import { useSessions } from '../context/SessionsContext'
 import { compareSessionsDesc } from '../utils/sessionOps'
 import { SessionModal } from '../components/SessionModal'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { CourtCostCalculator } from '../components/CourtCostCalculator'
 
 function SessionCard({ session, onDelete }: { session: Session; onDelete?: () => void }) {
   const navigate = useNavigate()
@@ -48,6 +49,7 @@ export function SessionListScreen() {
   const { sessions, deleteSession } = useSessions()
   const navigate = useNavigate()
   const [showCreate, setShowCreate] = useState(false)
+  const [showCalculator, setShowCalculator] = useState(false)
 
   const active = sessions.filter(s => s.status === 'active').sort(compareSessionsDesc)
   const ended = sessions.filter(s => s.status === 'ended').sort(compareSessionsDesc)
@@ -65,7 +67,16 @@ export function SessionListScreen() {
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <h1 className="text-lg font-bold">Pickle</h1>
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowCalculator(true)}
+            aria-label="Court cost calculator"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-lg"
+          >
+            🧮
+          </button>
+          <ThemeToggle />
+        </div>
       </header>
       <main className="p-4 space-y-6">
         <button
@@ -103,6 +114,7 @@ export function SessionListScreen() {
           onCreated={s => navigate(`/session/${s.id}`)}
         />
       )}
+      {showCalculator && <CourtCostCalculator onClose={() => setShowCalculator(false)} />}
     </div>
   )
 }
