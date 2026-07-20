@@ -736,13 +736,13 @@ git commit -m "feat: player stats and win streak helpers"
 - Consumes: `Session`, `PlaySystem`, `CompletedGame` (Task 1); `Candidate` type from `./suggestions` (Task 2).
 - Produces (all pure `(session, …) => Session`): `createNewSession(input: NewSessionInput)`, `checkInPlayer(session, playerId)`, `checkOutPlayer(session, playerId)`, `addRosterPlayer(session, name)`, `removeRosterPlayer(session, playerId)`, `assignToCourt(session, candidate: Candidate, court: number)`, `recordWin(session, court: number, winner: 1 | 2)`, `cancelGame(session, court: number)`, `setGameWinner(session, gameId: string, winner: 1 | 2)`, `deleteGame(session, gameId: string)`, `setPlaySystem(session, playSystem: PlaySystem)`, `updateSessionFields(session, fields)` (now dissolves holds on system change / court shrink), `compareSessionsDesc`, `localToday`.
 
-- [ ] **Step 1: Delete the old matchups module**
+- [x] **Step 1: Delete the old matchups module**
 
 ```bash
 git rm src/utils/matchups.ts src/utils/__tests__/matchups.test.ts
 ```
 
-- [ ] **Step 2: Write failing tests — replace `src/utils/__tests__/sessionOps.test.ts`**
+- [x] **Step 2: Write failing tests — replace `src/utils/__tests__/sessionOps.test.ts`**
 
 ```ts
 import { describe, it, expect } from 'vitest'
@@ -978,12 +978,12 @@ describe('compareSessionsDesc', () => {
 })
 ```
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `npx vitest run src/utils/__tests__/sessionOps.test.ts`
 Expected: FAIL — `assignToCourt` etc. not exported.
 
-- [ ] **Step 4: Replace `src/utils/sessionOps.ts`**
+- [x] **Step 4: Replace `src/utils/sessionOps.ts`**
 
 ```ts
 import type { Session, PlaySystem, CompletedGame } from '../types'
@@ -1210,12 +1210,12 @@ export function localToday(): string {
 }
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `npx vitest run src/utils/__tests__/sessionOps.test.ts`
 Expected: PASS (20 tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A src/utils
