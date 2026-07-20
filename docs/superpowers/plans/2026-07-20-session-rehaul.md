@@ -1926,7 +1926,7 @@ git commit -m "feat: ranked suggestions with per-court assignment and waiting li
 - Consumes: `useSession()` — `session.matchHistory`, `setGameWinner(gameId, winner)`, `deleteGame(gameId)`.
 - Produces: flat newest-first game list.
 
-- [ ] **Step 1: Write failing tests — replace `src/components/__tests__/MatchesTab.test.tsx`**
+- [x] **Step 1: Write failing tests — replace `src/components/__tests__/MatchesTab.test.tsx`**
 
 ```tsx
 import { render, screen, within } from '@testing-library/react'
@@ -2012,12 +2012,12 @@ describe('MatchesTab', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/components/__tests__/MatchesTab.test.tsx`
 Expected: FAIL — old component reads `session.roundHistory`.
 
-- [ ] **Step 3: Replace `src/components/MatchesTab.tsx`**
+- [x] **Step 3: Replace `src/components/MatchesTab.tsx`**
 
 ```tsx
 import { useSession } from '../context/SessionContext'
@@ -2092,12 +2092,12 @@ export function MatchesTab() {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/components/__tests__/MatchesTab.test.tsx`
 Expected: PASS (5 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/MatchesTab.tsx src/components/__tests__/MatchesTab.test.tsx
