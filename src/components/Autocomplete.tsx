@@ -64,6 +64,7 @@ export function Autocomplete({
   }
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.preventDefault()
     e.stopPropagation()
     onDelete(id)
   }
@@ -92,7 +93,11 @@ export function Autocomplete({
             <li
               key={item.id}
               className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer min-h-[44px]"
-              onMouseDown={() => handleSelect(item)}
+              onMouseDown={e => {
+                // keep focus (and the mobile keyboard) on the input
+                e.preventDefault()
+                handleSelect(item)
+              }}
             >
               <span className="text-gray-900 dark:text-gray-50">{item.label}</span>
               <button

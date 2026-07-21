@@ -97,6 +97,42 @@ describe('Autocomplete', () => {
     expect(screen.getByPlaceholderText('Player name')).toHaveValue('')
   })
 
+  it('keeps focus on the input after selecting a suggestion', async () => {
+    const user = userEvent.setup()
+    render(
+      <Autocomplete
+        suggestions={suggestions}
+        onSelect={vi.fn()}
+        onSubmit={vi.fn()}
+        onDelete={vi.fn()}
+        placeholder="Player name"
+      />
+    )
+
+    const input = screen.getByPlaceholderText('Player name')
+    await user.type(input, 'ja')
+    await user.click(screen.getByText('Jason'))
+    expect(input).toHaveFocus()
+  })
+
+  it('keeps focus on the input after deleting a suggestion', async () => {
+    const user = userEvent.setup()
+    render(
+      <Autocomplete
+        suggestions={suggestions}
+        onSelect={vi.fn()}
+        onSubmit={vi.fn()}
+        onDelete={vi.fn()}
+        placeholder="Player name"
+      />
+    )
+
+    const input = screen.getByPlaceholderText('Player name')
+    await user.type(input, 'ja')
+    await user.click(screen.getByLabelText('Delete Jason'))
+    expect(input).toHaveFocus()
+  })
+
   it('hides suggestions when input is empty', () => {
     render(
       <Autocomplete
