@@ -12,6 +12,21 @@ const systemLabels: Record<PlaySystem, string> = {
   'round-robin': 'Round Robin',
 }
 
+const COURTS_MIN = 1
+const COURTS_MAX = 20
+
+const clampCourts = (n: number) =>
+  Math.min(COURTS_MAX, Math.max(COURTS_MIN, n))
+
+const sanitizeInteger = (raw: string) => raw.replace(/\D/g, '')
+
+// digits and at most one decimal point; minus can never enter
+const sanitizeAmount = (raw: string) => {
+  const cleaned = raw.replace(/[^0-9.]/g, '')
+  const [head, ...rest] = cleaned.split('.')
+  return rest.length ? `${head}.${rest.join('')}` : head
+}
+
 interface RosterDraftEntry {
   id: string | null // null = not yet in the session (added on save)
   name: string
@@ -74,11 +89,15 @@ export function SessionModal({ sessionId, onClose, onCreated }: SessionModalProp
   }
 
   const handleSave = () => {
+    const parsedAmount = Number(amount)
     const fields = {
       date,
       venue,
-      numCourts: Number(courts) || 1,
-      courtAmount: amount.trim() ? Number(amount) : null,
+      numCourts: clampCourts(Number(courts) || COURTS_MIN),
+      courtAmount:
+        amount.trim() && Number.isFinite(parsedAmount)
+          ? Math.max(0, parsedAmount)
+          : null,
       playSystem,
     }
     if (!existing) {
@@ -138,21 +157,26 @@ export function SessionModal({ sessionId, onClose, onCreated }: SessionModalProp
         <label className="block flex-1">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Courts</span>
           <input
-            type="number"
-            min={1}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             aria-label="Courts"
             value={courts}
-            onChange={e => setCourts(e.target.value)}
+            onChange={e => setCourts(sanitizeInteger(e.target.value))}
+            onBlur={() => {
+              if (courts) setCourts(String(clampCourts(Number(courts))))
+            }}
             className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-base bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50"
           />
         </label>
         <label className="block flex-1">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Total amount (optional)</span>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             aria-label="Total Amount"
             value={amount}
-            onChange={e => setAmount(e.target.value)}
+            onChange={e => setAmount(sanitizeAmount(e.target.value))}
             placeholder="e.g. 2000"
             className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-base bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-50"
           />
