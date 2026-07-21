@@ -198,17 +198,12 @@ export function MatchupsTab() {
               <p className="text-sm font-medium text-gray-900 dark:text-gray-50 text-center">
                 {teamNames(cand.team1)} <span className="text-gray-400 dark:text-gray-500">vs</span> {teamNames(cand.team2)}
               </p>
-              <div className="flex gap-2">
-                {freeCourts.map(court => (
-                  <button
-                    key={court}
-                    onClick={() => assign(cand, court)}
-                    className="flex-1 rounded-md bg-green-600 dark:bg-green-700 text-white py-2 text-xs font-medium min-h-[40px]"
-                  >
-                    Assign to Court {court}
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => assign(cand, freeCourts[0])}
+                className="w-full rounded-md bg-green-600 dark:bg-green-700 text-white py-2 text-xs font-medium min-h-[40px]"
+              >
+                Assign to Court
+              </button>
             </div>
           ))}
         </div>

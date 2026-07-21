@@ -32,7 +32,7 @@ const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }) 
 ## Flows worth driving
 
 1. Create session: "+ New Session" button → modal (Date, Venue, Courts, "Total amount", play system — defaults to Paddle Queue — and players) → "Create Session" auto-navigates to `/session/:id`, landing on the Players tab.
-2. Players tab check-in (fills the queue) → Matchups tab: "Up Next" ranked suggestions, each with per-court "Assign to Court N" buttons → assigning creates a live court card and smooth-scrolls to top → "Team 1 Wins"/"Team 2 Wins" frees the court (card returns to "Free"; paddle queue / round robin), or winners hold it with a streak line and a "Challengers · Court N" list (challenge court). Cancel ✕ returns players to the queue unrecorded.
+2. Players tab check-in (fills the queue) → Matchups tab: "Up Next" ranked suggestions, each with a single "Assign to Court" button (auto-assigns to the lowest-numbered free court; the Challengers list keeps court-specific "Assign to Court N") → assigning creates a live court card and smooth-scrolls to top → "Team 1 Wins"/"Team 2 Wins" frees the court (card returns to "Free"; paddle queue / round robin), or winners hold it with a streak line and a "Challengers · Court N" list (challenge court). Cancel ✕ returns players to the queue unrecorded.
 3. Matches tab: flat list newest-first; tapping the losing team flips the winner; row ✕ deletes after confirm.
 4. Players tab stat sublines: "1 game · 1W–0L · 100%" / "3 games · 2W–1L · 67%" / "0 games" (unit singularizes at 1 — don't regex `\d+ games` blindly).
 5. Expenses modal math (flat split of Total amount across participated players).

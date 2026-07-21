@@ -98,23 +98,29 @@ describe('MatchupsTab courts', () => {
 describe('MatchupsTab suggestions', () => {
   beforeEach(() => localStorage.clear())
 
-  it('lists ranked candidates with an assign button per free court', async () => {
+  it('lists ranked candidates with a single assign button regardless of free courts', async () => {
     const user = userEvent.setup()
-    renderTab(makeSession(['A', 'B', 'C', 'D', 'E'], 'paddle-queue', 2))
+    renderTab(makeSession(['A', 'B', 'C', 'D', 'E'], 'paddle-queue', 3))
     expect(screen.getByText('Up Next')).toBeInTheDocument()
     const first = screen.getAllByTestId('suggestion')[0]
     expect(within(first).getByText(/A & B/)).toBeInTheDocument()
-    expect(within(first).getByRole('button', { name: 'Assign to Court 1' })).toBeInTheDocument()
-    expect(within(first).getByRole('button', { name: 'Assign to Court 2' })).toBeInTheDocument()
-    await user.click(within(first).getByRole('button', { name: 'Assign to Court 1' }))
+    expect(within(first).getAllByRole('button', { name: /^Assign to Court/ })).toHaveLength(1)
+    await user.click(within(first).getByRole('button', { name: 'Assign to Court' }))
     expect(within(courtCard(1)).getByRole('button', { name: 'Team 1 Wins' })).toBeInTheDocument()
+  })
+
+  it('auto-assigns to the first free court when earlier courts are busy', async () => {
+    const user = userEvent.setup()
+    renderTab(withLiveGame(makeSession(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], 'paddle-queue', 2)))
+    await user.click(screen.getByRole('button', { name: 'Assign to Court' }))
+    expect(within(courtCard(2)).getByRole('button', { name: 'Team 1 Wins' })).toBeInTheDocument()
   })
 
   it('smooth-scrolls to the top after assigning', async () => {
     const user = userEvent.setup()
     const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView')
     renderTab(makeSession(['A', 'B', 'C', 'D']))
-    await user.click(screen.getAllByRole('button', { name: 'Assign to Court 1' })[0])
+    await user.click(screen.getByRole('button', { name: 'Assign to Court' }))
     expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth' })
     scrollSpy.mockRestore()
   })
